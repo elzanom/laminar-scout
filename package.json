@@ -10,6 +10,9 @@
     "dashboard": "node scripts/dashboard.js",
     "backfill": "node scripts/backfill.js",
     "seed": "node scripts/seed.js",
+    "start:all": "node scripts/start.js",
+    "stop:all": "node scripts/stop.js",
+    "status": "node scripts/status.js",
     "pm2:start": "pm2 start ecosystem.config.cjs",
     "pm2:logs": "pm2 logs laminar-scout",
     "pm2:restart": "pm2 restart laminar-scout",
@@ -30,5 +33,8 @@
     "express": "^5.2.1",
     "jsonrepair": "^3.7.1",
     "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "pm2": "^7.0.1"
   }
 }

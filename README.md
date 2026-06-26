@@ -44,9 +44,11 @@ node scripts/smoke-step5.js
 # Start the scout (foreground)
 node src/index.js
 
-# Or via PM2 for production
-npm run pm2:start
-npm run pm2:logs
+# Or via PM2 for production (recommended for multi-process orchestration)
+npm run start:all       # start all 3 processes (main + webhook + dashboard)
+npm run status          # check status table (pid, uptime, cpu, mem, restarts)
+npm run stop:all        # graceful SIGTERM stop for all processes
+pm2 logs laminar-scout  # tail logs
 ```
 
 On boot, scout:
@@ -380,6 +382,9 @@ Laminar can consume this directly (file polling, REST POST, or shared SQLite).
 |--------|---------|
 | `node src/index.js` | Full boot with cron + webhook + live handlers |
 | `node scripts/dashboard.js --port 3002` | Start dashboard server (vanilla HTML/JS/CSS frontend) |
+| `node scripts/start.js` | Start all PM2 processes (main + webhook + dashboard) via ecosystem.config.cjs |
+| `node scripts/stop.js` | Gracefully stop all laminar-scout PM2 processes (SIGTERM) |
+| `node scripts/status.js` | Show current state of all processes (status, pid, uptime, cpu, mem, restarts) |
 | `node scripts/smoke-db.js` | CRUD smoke test (uses tmpdir) |
 | `node scripts/smoke-tx-parser.js` | TX parser smoke |
 | `node scripts/smoke-pool-screener.js` | Pool screener smoke |
