@@ -386,6 +386,7 @@ Run `node scripts/dataset-stats.js` for the live numbers, or see the dashboard "
 | | `pool_bin_step` | 100% | Meteora pool-meta |
 | **Token** | `token_x_market_cap` | 100% | Meteora pool-meta |
 | | `token_x_holders` | 100% | Meteora pool-meta |
+| | `token_x_total_supply` | 100% | Meteora pool-meta (v7) |
 | | `token_x_fdv` | 100% | Jupiter Tokens V2 |
 | | `token_x_mcap` | 100% | Jupiter Tokens V2 |
 | | `token_x_liquidity` | 100% | Jupiter Tokens V2 |
@@ -395,6 +396,7 @@ Run `node scripts/dataset-stats.js` for the live numbers, or see the dashboard "
 | | `token_price_change_24h` | 100% | Jupiter Price V3 |
 | | `token_volatility_24h` | 100% | Proxy = abs(priceChange24h); true std dev needs candle history |
 | | `token_num_buys_5m` / `num_sells_5m` / `buy_sell_ratio_5m` | 61-73% | Jupiter stats5m (only active tokens) |
+| | `token_y_total_supply` | 100% | Meteora pool-meta (v7) |
 | **Pool** | `pool_launchpad` | 92% | Meteora pool-meta (rest are old pools without launchpad metadata) |
 | | `pool_volume_24h` / `fee_tvl_ratio` | 4% | market_snapshots quick-fill (current snapshot only, no historical) |
 | | `pool_current_price` / `pool_dynamic_fee_pct` / `pool_apr` / `pool_apy` | 100% | Meteora pool-meta |
