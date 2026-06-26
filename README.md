@@ -378,25 +378,62 @@ Laminar can consume this directly (file polling, REST POST, or shared SQLite).
 
 ## Scripts reference
 
+### Lifecycle
+
 | Script | Purpose |
 |--------|---------|
 | `node src/index.js` | Full boot with cron + webhook + live handlers |
-| `node scripts/dashboard.js --port 3002` | Start dashboard server (vanilla HTML/JS/CSS frontend) |
 | `node scripts/start.js` | Start all PM2 processes (main + webhook + dashboard) via ecosystem.config.cjs |
 | `node scripts/stop.js` | Gracefully stop all laminar-scout PM2 processes (SIGTERM) |
 | `node scripts/status.js` | Show current state of all processes (status, pid, uptime, cpu, mem, restarts) |
+| `node scripts/dashboard.js --port 3002` | Start dashboard server (vanilla HTML/JS/CSS frontend) |
+
+### Dataset pipeline
+
+| Script | Purpose |
+|--------|---------|
+| `node scripts/build-dataset.js --limit 5000` | Rebuild training records from closed positions + Meteora pool-meta (DELETE + INSERT) |
+| `node scripts/backfill-meteora-summary.js` | Re-fetch pool-meta, update `token_x_organic_score` and `token_x_fdv` (top 100 active DLMM pools) |
+| `node scripts/backfill-dexscreener.js --rate 0.15` | Backfill `token_price_change_24h` + `token_x_fdv` via DexScreener free tier |
+| `node scripts/backfill-jupiter.js --rate 1.5 --concurrency 1` | Backfill token metrics via Jupiter Tokens V2 + Price V3 (mcap, liquidity, organic_score, is_verified, created_at, priceChange24h, stats5m). Free tier-safe defaults. |
+| `node scripts/backfill-pnl-all.js --concurrency 3 --rate 0.3` | Backfill `pnl_sol`, `is_out_of_range`, `fee_per_tvl_24h`, `pool_active_bin_id` from Meteora PnL API for all (wallet, pool) pairs |
+| `node scripts/backfill-pool-launchpad.js --rate 0.3` | Re-fetch pool-meta, update `pool_launchpad` for NULL pools |
+| `node scripts/backfill-positions.js` | Backfill `positions.token_pair` + `bin_step` from Meteora pool-meta (one-time) |
+| `node scripts/backfill-enrichment.js` | One-time backfill: `wallets.unique_pools_traded` + `market_snapshots` quick-fill |
+| `node scripts/rebuild-all.js` | **One-shot wrapper**: build-dataset → meteora → dexscreener → jupiter → pool-launchpad → export (correct order enforced) |
+| `node scripts/export-dataset.js --limit 10000` | Export training records to `dataset/training-records.csv` |
+| `node scripts/dataset-stats.js` | Print comprehensive dataset statistics (coverage %, value ranges, label distribution) |
+
+### Discovery / evaluation
+
+| Script | Purpose |
+|--------|---------|
+| `node scripts/live-cycle.js --limit 5 --evaluate 3` | One-shot discovery + evaluation cycle |
+| `node scripts/seed.js --file wallets.txt` | Import seed wallets (optional bootstrap) |
+| `node scripts/backfill.js --wallet <addr> --days 90` | Backfill one wallet manually |
+| `node scripts/reevaluate-local.js` | Fast tier re-evaluation from local positions only |
+
+### Smoke tests
+
+| Script | Purpose |
+|--------|---------|
 | `node scripts/smoke-db.js` | CRUD smoke test (uses tmpdir) |
 | `node scripts/smoke-tx-parser.js` | TX parser smoke |
 | `node scripts/smoke-pool-screener.js` | Pool screener smoke |
 | `node scripts/smoke-discovery.js` | Discovery smoke |
 | `node scripts/smoke-step5.js` | Signal/dataset/ranking smoke |
-| `node scripts/live-cycle.js --limit 5 --evaluate 3` | One-shot discovery + evaluation cycle |
-| `node scripts/build-dataset.js --limit 1000` | Rebuild training records from closed positions |
-| `node scripts/export-dataset.js` | Export unexported records to CSV |
-| `node scripts/backfill-enrichment.js` | Backfill `wallet_unique_pools_traded` + quick-fill `market_snapshots` |
-| `node scripts/seed.js --file wallets.txt` | Import seed wallets (optional bootstrap) |
-| `node scripts/backfill.js --wallet <addr> --days 90` | Backfill one wallet manually |
-| `node scripts/reevaluate-local.js` | Fast tier re-evaluation from local positions only |
+
+### Convenience npm scripts
+
+```bash
+npm run start:all    # start all PM2 processes
+npm run stop:all     # stop all PM2 processes
+npm run status       # process status table
+npm run rebuild      # full dataset rebuild (scripts/rebuild-all.js)
+npm run stats        # dataset statistics (scripts/dataset-stats.js)
+npm run export       # export training-records.csv
+npm run build-dataset # rebuild training_records from positions
+```
 
 ---
 
