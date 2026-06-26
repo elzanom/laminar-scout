@@ -276,7 +276,7 @@ export function createApp() {
         'wallet_prior_pnl_usd','wallet_prior_fees_usd','wallet_prior_capital_usd',
         'wallet_prior_position_count','wallet_prior_win_rate',
         'wallet_pool_revisit_count','wallet_pool_revisit_pnl_usd','wallet_pool_revisit_wr',
-        'is_first_in_pool',
+        'is_first_in_pool','position_in_pool_count',
       ];
       const coverage = {};
       for (const f of fields) {

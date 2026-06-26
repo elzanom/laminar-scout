@@ -56,7 +56,7 @@ function buildReport(db) {
     'wallet_prior_pnl_usd','wallet_prior_fees_usd','wallet_prior_capital_usd',
     'wallet_prior_position_count','wallet_prior_win_rate','wallet_prior_wins','wallet_prior_losses',
     'wallet_pool_revisit_count','wallet_pool_revisit_pnl_usd','wallet_pool_revisit_wr',
-    'wallet_pool_revisit_fees_usd','is_first_in_pool',
+    'wallet_pool_revisit_fees_usd','is_first_in_pool','position_in_pool_count',
     'wallet_discovered_at','wallet_discovery_source','wallet_position_index',
   ];
   const coverage = {};

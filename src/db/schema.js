@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 import { getConfig } from '../config/config.js';
 import { log } from '../utils/logger.js';
 
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 
 const MIGRATIONS = [
   {
@@ -125,6 +125,19 @@ const MIGRATIONS = [
       _addCol('training_records', 'token_x_circ_supply', 'REAL');
       _addCol('training_records', 'token_y_total_supply', 'REAL');
       _addCol('training_records', 'token_y_circ_supply', 'REAL');
+    },
+  },
+  {
+    version: 8,
+    description: 'Add position_in_pool_count: how many positions exist in this pool (competition density)',
+    up: (db) => {
+      const _addCol = (table, col, decl) => {
+        const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
+        if (!cols.includes(col)) {
+          db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${decl}`);
+        }
+      };
+      _addCol('training_records', 'position_in_pool_count', 'INTEGER');
     },
   },
 ];

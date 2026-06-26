@@ -77,6 +77,7 @@ export async function buildTrainingRecordFromPosition(position) {
   const priorStats = _computePriorStats(priorPositions);
 
   const priorInPoolPositions = _priorInPoolPositions(position.wallet_address, position.pool_address, position.entry_timestamp);
+  const poolPositionCount = _poolPositionCount(position.pool_address, position.entry_timestamp);
   const priorInPoolStats = _computePriorInPoolStats(priorInPoolPositions);
 
   const record = {
@@ -167,6 +168,7 @@ export async function buildTrainingRecordFromPosition(position) {
     wallet_pool_revisit_wr: priorInPoolStats.pool_revisit_wr,
     wallet_pool_revisit_fees_usd: _safeNumber(priorInPoolStats.pool_revisit_fees_usd),
     is_first_in_pool: priorInPoolStats.is_first_in_pool,
+    position_in_pool_count: poolPositionCount,
     wallet_activity_span_days: (wallet?.first_seen && wallet?.last_active)
       ? Number(((wallet.last_active - wallet.first_seen) / 86400).toFixed(2))
       : null,
@@ -255,6 +257,22 @@ function _priorInPoolPositions(walletAddress, poolAddress, beforeTs) {
     );
   } catch {
     return [];
+  }
+}
+
+// Count of all positions in this pool with entry_timestamp <= beforeTs.
+// Captures "competition density" — pools with many positions are busier and
+// may have different dynamics than sparsely-traded pools.
+function _poolPositionCount(poolAddress, beforeTs) {
+  try {
+    if (!poolAddress) return 0;
+    const positions = positionsDb.listPositions(
+      { pool_address: poolAddress, ...(beforeTs ? { entry_before: beforeTs } : {}) },
+      { limit: 5000 },
+    );
+    return positions.length;
+  } catch {
+    return 0;
   }
 }
 
