@@ -18,14 +18,22 @@ export function listPositions(filter = {}, opts = {}) {
   if (filter.pool_address) { where.push('pool_address = ?'); params.push(filter.pool_address); }
   if (filter.status) { where.push('status = ?'); params.push(filter.status); }
   if (filter.position_mint) { where.push('position_mint = ?'); params.push(filter.position_mint); }
+  if (filter.exit_before != null) {
+    // Useful for "recent form" queries: positions closed before a reference timestamp
+    where.push('exit_timestamp IS NOT NULL AND exit_timestamp > 0 AND exit_timestamp < ?');
+    params.push(filter.exit_before);
+  }
   if (filter.wallet_and_pool) {
     where.length = 0;
     params.length = 0;
     where.push('wallet_address = ?'); params.push(filter.wallet_and_pool.wallet);
     where.push('pool_address = ?'); params.push(filter.wallet_and_pool.pool);
   }
+  // Default ordering: by entry_timestamp DESC (newest first). Override with opts.orderBy
+  // when caller needs oldest-first (e.g. "positions closed before X").
+  const orderBy = opts.orderBy || 'entry_timestamp DESC';
   const limit = opts.limit ? `LIMIT ${Number(opts.limit)}` : '';
-  const sql = `SELECT * FROM positions ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY entry_timestamp DESC ${limit}`;
+  const sql = `SELECT * FROM positions ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY ${orderBy} ${limit}`;
   return getDb().prepare(sql).all(...params);
 }
 

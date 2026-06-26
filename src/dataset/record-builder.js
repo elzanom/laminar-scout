@@ -157,11 +157,14 @@ export async function buildTrainingRecordFromPosition(position) {
 
 function _recentClosedPositions(walletAddress, beforeTs, windowSec) {
   try {
-    const cutoff = (beforeTs || Math.floor(Date.now() / 1000)) - windowSec;
+    if (!beforeTs) return [];
+    const cutoff = beforeTs - windowSec;
+    // DB-side filter: positions closed in [cutoff, beforeTs), most-recently-closed first.
+    // Returns the most recent `limit` closed positions before the reference entry.
     return positionsDb.listPositions(
-      { wallet_address: walletAddress, status: 'closed' },
-      { limit: 200 },
-    ).filter((p) => p.exit_timestamp && p.exit_timestamp >= cutoff && p.exit_timestamp < beforeTs);
+      { wallet_address: walletAddress, status: 'closed', exit_before: beforeTs },
+      { limit: 200, orderBy: 'exit_timestamp DESC' },
+    ).filter((p) => p.exit_timestamp && p.exit_timestamp >= cutoff);
   } catch {
     return [];
   }
