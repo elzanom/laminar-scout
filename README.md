@@ -376,6 +376,52 @@ Laminar can consume this directly (file polling, REST POST, or shared SQLite).
 
 ---
 
+## Dataset coverage (current state)
+
+Run `node scripts/dataset-stats.js` for the live numbers, or see the dashboard "dataset feature coverage" panel. As of the last rebuild:
+
+| Group | Field | Coverage | Source |
+|-------|-------|---------:|--------|
+| **Identity** | `token_pair` | 100% | Meteora pool-meta |
+| | `pool_bin_step` | 100% | Meteora pool-meta |
+| **Token** | `token_x_market_cap` | 100% | Meteora pool-meta |
+| | `token_x_holders` | 100% | Meteora pool-meta |
+| | `token_x_fdv` | 100% | Jupiter Tokens V2 |
+| | `token_x_mcap` | 100% | Jupiter Tokens V2 |
+| | `token_x_liquidity` | 100% | Jupiter Tokens V2 |
+| | `token_x_is_verified` | 100% | Jupiter Tokens V2 |
+| | `token_x_created_at` | 99% | Jupiter Tokens V2 |
+| | `token_x_organic_score` | 83% | Jupiter (only tokens with organic data) |
+| | `token_price_change_24h` | 100% | Jupiter Price V3 |
+| | `token_volatility_24h` | 100% | Proxy = abs(priceChange24h); true std dev needs candle history |
+| | `token_num_buys_5m` / `num_sells_5m` / `buy_sell_ratio_5m` | 61-73% | Jupiter stats5m (only active tokens) |
+| **Pool** | `pool_launchpad` | 92% | Meteora pool-meta (rest are old pools without launchpad metadata) |
+| | `pool_volume_24h` / `fee_tvl_ratio` | 4% | market_snapshots quick-fill (current snapshot only, no historical) |
+| | `pool_current_price` / `pool_dynamic_fee_pct` / `pool_apr` / `pool_apy` | 100% | Meteora pool-meta |
+| | `pool_token_x_age_hours` | 100% | Meteora created_at (token/pool age proxy) |
+| **Position** | `pnl_usd` / `pnl_pct` / `pnl_sol` | 99-100% | Meteora PnL API + Helius history |
+| | `fee_earned_usd` / `fee_yield` / `duration_hours` | 99.8% | Same |
+| | `bin_lower` / `bin_upper` / `bin_center_distance` | 11% | Only positions that came through Meteora PnL API path (rest were rent-reclaimed on-chain after close_position) |
+| | `is_out_of_range` / `fee_per_tvl_24h` / `pool_active_bin_id` | 100% | Meteora PnL API |
+| **Wallet** | `wallet_score_at_entry` / `wallet_wr_at_entry` | 100% | Wallet table snapshot |
+| | `wallet_pnl_at_entry` / `wallet_position_count_at_entry` | 100% | Same |
+| | `wallet_is_top_at_entry` / `wallet_is_tracked_at_entry` | 100% | Same |
+| | `wallet_recent_wr_30d` / `wallet_recent_fee_yield_30d` / `wallet_recent_pnl_30d` | 0.9% | Only when wallet had positions closed in the 30d window before entry |
+| | `wallet_activity_span_days` | 100% | First-seen to last-active span |
+| | `wallet_unique_pools_traded` | 100% | backfill-enrichment |
+| | `wallet_discovered_at` / `wallet_position_index` | 100% | Discovery metadata |
+
+### Known limitations
+
+1. **Wallet context is current-state, not at-entry-state.** `wallet_score_at_entry` etc. reflect the wallet's metrics AT EXPORT TIME, not at the time the position was opened. For Laminar's temporal modeling, treat these as approximate. The 90-day backfill window from Meteora PnL also limits how far back we can evaluate.
+2. **`token_volatility_24h` is a proxy**, not a true standard deviation. It equals `abs(priceChange24h)`. True std dev requires candle history (Birdeye Pro / Jupiter Pro / DexScreener paid).
+3. **`bin_lower`/`bin_upper` (89% missing).** Closed positions' on-chain accounts are rent-reclaimed by Meteora's `close_position`. The remaining 11% came from the Meteora PnL API path which preserves historical bin info.
+4. **`pool_volume_24h`/`fee_tvl_ratio` (96% missing).** Historical market snapshots don't exist in Meteora's free API. We can only fill current snapshots. For Laminar, this means market-context features at entry are not reliable.
+5. **Time diversity is limited.** Most positions cluster in 2026 due to the 90-day Meteora backfill window. Older positions require paid historical data.
+6. **Wallet diversity is limited (11 distinct wallets).** Only wallets that survived tier thresholds were evaluated. Laminar may want to also train on rejected wallets' history.
+
+---
+
 ## Scripts reference
 
 ### Lifecycle
