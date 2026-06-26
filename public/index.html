@@ -3,177 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>laminar-scout dashboard</title>
+  <title>METEORA LP SCREENER // laminar-scout</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <div class="scanlines"></div>
+  <div class="scan-overlay"></div>
+
   <header class="topbar">
     <div class="brand">
-      <span class="dot" id="status-dot"></span>
-      <span class="brand-name">laminar-scout</span>
-      <span class="brand-tag">Meteora DLMM wallet tracker</span>
+      <h1>METEORA LP SCREENER</h1>
+      <span class="subtitle">// DLMM LP CASE STUDY</span>
     </div>
-    <div class="topbar-meta">
-      <span class="meta-item">uptime <strong id="uptime">--</strong></span>
-      <span class="meta-item">last poll <strong id="last-poll">--</strong></span>
-      <span class="meta-item"><a href="/healthz" target="_blank">/healthz</a></span>
+    <div class="meta">
+      <span class="meta-item"><span class="label">Latest scan:</span> <span id="meta-latest-scan" class="val">--</span></span>
+      <span class="meta-item"><span class="label">Pools scanned:</span> <span id="meta-pools" class="val">--</span></span>
+      <span class="meta-item"><span class="label">Wallets:</span> <span id="meta-wallets" class="val">--</span></span>
+      <span class="meta-item"><span class="label">LIST</span> - <span id="meta-status" class="val">--</span></span>
     </div>
   </header>
 
-  <main>
-    <section class="cards" id="cards">
-      <div class="card">
-        <div class="card-label">total wallets</div>
-        <div class="card-value" id="c-wallets-total">--</div>
-        <div class="card-sub">
-          <span class="pill pill-top" id="c-wallets-top">-- top</span>
-          <span class="pill pill-tracked" id="c-wallets-tracked">-- tracked</span>
-          <span class="pill pill-candidate" id="c-wallets-candidate">-- candidate</span>
-          <span class="pill pill-rejected" id="c-wallets-rejected">-- rejected</span>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-label">positions</div>
-        <div class="card-value" id="c-positions-total">--</div>
-        <div class="card-sub">
-          <span class="pill pill-open" id="c-positions-open">-- open</span>
-          <span class="pill pill-closed" id="c-positions-closed">-- closed</span>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-label">signals</div>
-        <div class="card-value" id="c-signals-total">--</div>
-        <div class="card-sub">
-          <span class="pill pill-pending" id="c-signals-pending">-- pending</span>
-          <span class="pill pill-sent" id="c-signals-sent">-- sent</span>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-label">training dataset</div>
-        <div class="card-value" id="c-training-total">--</div>
-        <div class="card-sub">
-          <span class="pill" id="c-training-exported">-- exported</span>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-label">processed txs</div>
-        <div class="card-value" id="c-processed-txs">--</div>
-        <div class="card-sub">
-          <span class="pill">idempotent dedup</span>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-label">market snapshots</div>
-        <div class="card-value" id="c-snapshots">--</div>
-        <div class="card-sub">
-          <span class="pill">pool time-series</span>
-        </div>
-      </div>
-    </section>
+  <div class="subbar">
+    <div class="counters">
+      <div class="counter"><span class="label">total</span><span id="c-wallets-total" class="val">--</span></div>
+      <div class="counter"><span class="label">top</span><span id="c-wallets-top" class="val accent-cyan">--</span></div>
+      <div class="counter"><span class="label">tracked</span><span id="c-wallets-tracked" class="val accent-blue">--</span></div>
+      <div class="counter"><span class="label">candidates</span><span id="c-wallets-candidate" class="val muted">--</span></div>
+      <div class="counter"><span class="label">rejected</span><span id="c-wallets-rejected" class="val accent-red">--</span></div>
+      <div class="counter"><span class="label">signals</span><span id="c-signals-total" class="val">--</span></div>
+      <div class="counter"><span class="label">positions</span><span id="c-positions-total" class="val">--</span></div>
+      <div class="counter"><span class="label">training</span><span id="c-training-total" class="val">--</span></div>
+    </div>
+    <div class="controls">
+      <select id="filter-status" class="ctl">
+        <option value="top,tracked">status: top + tracked</option>
+        <option value="top">status: top only</option>
+        <option value="tracked">status: tracked</option>
+        <option value="candidate">status: candidate</option>
+      </select>
+      <select id="order-by" class="ctl">
+        <option value="score">order: score</option>
+        <option value="wr">order: win rate</option>
+        <option value="pnl">order: pnl</option>
+      </select>
+      <span class="poll-info">poll <span id="last-poll">--</span></span>
+    </div>
+  </div>
 
-    <section class="grid-2">
-      <div class="panel">
-        <h2>top wallets (by score)</h2>
-        <table class="data-table" id="table-top-wallets">
-          <thead>
-            <tr>
-              <th>wallet</th>
-              <th class="num">score</th>
-              <th class="num">WR%</th>
-              <th class="num">positions</th>
-              <th class="num">P&amp;L USD</th>
-              <th class="num">unique pools</th>
-              <th>source</th>
-            </tr>
-          </thead>
-          <tbody><tr><td colspan="7" class="muted">loading…</td></tr></tbody>
-        </table>
-      </div>
-
-      <div class="panel">
-        <h2>recent signals</h2>
-        <table class="data-table" id="table-signals">
-          <thead>
-            <tr>
-              <th>time</th>
-              <th>pair</th>
-              <th>trigger</th>
-              <th class="num">conf</th>
-              <th>status</th>
-            </tr>
-          </thead>
-          <tbody><tr><td colspan="5" class="muted">no signals yet</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="grid-2">
-      <div class="panel">
-        <h2>recent closed positions</h2>
-        <table class="data-table" id="table-positions">
-          <thead>
-            <tr>
-              <th>position</th>
-              <th>wallet</th>
-              <th>pair</th>
-              <th class="num">P&amp;L USD</th>
-              <th class="num">fees</th>
-              <th class="num">hours</th>
-              <th>profitable</th>
-            </tr>
-          </thead>
-          <tbody><tr><td colspan="7" class="muted">loading…</td></tr></tbody>
-        </table>
-      </div>
-
-      <div class="panel">
-        <h2>recent discoveries</h2>
-        <table class="data-table" id="table-discoveries">
-          <thead>
-            <tr>
-              <th>time</th>
-              <th>wallet</th>
-              <th>source</th>
-              <th>detail</th>
-            </tr>
-          </thead>
-          <tbody><tr><td colspan="4" class="muted">loading…</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="grid-2">
-      <div class="panel">
-        <h2>score distribution</h2>
-        <div id="chart-score" class="chart-bars"></div>
-      </div>
-      <div class="panel">
-        <h2>discovery sources</h2>
-        <div id="chart-sources" class="chart-bars"></div>
-      </div>
-    </section>
-
-    <section class="grid-2">
-      <div class="panel">
-        <h2>health (subsystems)</h2>
-        <table class="data-table" id="table-health">
-          <thead>
-            <tr><th>subsystem</th><th>last success</th><th>last error</th><th>errors</th><th>stalled</th></tr>
-          </thead>
-          <tbody><tr><td colspan="5" class="muted">loading…</td></tr></tbody>
-        </table>
-      </div>
-      <div class="panel">
-        <h2>cron last-run timestamps</h2>
-        <table class="data-table" id="table-cron">
-          <thead>
-            <tr><th>job</th><th>last run</th></tr>
-          </thead>
-          <tbody><tr><td colspan="2" class="muted">loading…</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+  <main class="table-wrap">
+    <table class="data-table" id="table-wallets">
+      <thead>
+        <tr>
+          <th class="num-col">#</th>
+          <th class="wallet-col">wallet</th>
+          <th class="num-col">score</th>
+          <th class="num-col">wr%</th>
+          <th class="num-col">pnl usd</th>
+          <th class="num-col">fee $</th>
+          <th class="num-col">fee yield</th>
+          <th class="num-col">pools</th>
+          <th class="num-col">w/l</th>
+          <th class="num-col">open</th>
+          <th class="num-col">avg bin</th>
+          <th class="strategy-col">strategy</th>
+        </tr>
+      </thead>
+      <tbody><tr><td colspan="12" class="muted center">loading…</td></tr></tbody>
+    </table>
   </main>
+
+  <section class="grid-panels">
+    <div class="panel">
+      <div class="panel-header">recent signals</div>
+      <table class="data-table compact" id="table-signals">
+        <thead><tr><th>time</th><th>pair</th><th>trigger</th><th class="num">conf</th><th>status</th></tr></thead>
+        <tbody><tr><td colspan="5" class="muted center">no signals yet</td></tr></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="panel-header">recent closed positions</div>
+      <table class="data-table compact" id="table-positions">
+        <thead><tr><th>wallet</th><th>pair</th><th class="num">pnl</th><th class="num">fees</th><th class="num">hours</th><th>result</th></tr></thead>
+        <tbody><tr><td colspan="6" class="muted center">no closed positions yet</td></tr></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="panel-header">discovery sources</div>
+      <div id="chart-sources" class="chart-bars"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">subsystem health</div>
+      <table class="data-table compact" id="table-health">
+        <thead><tr><th>subsystem</th><th>last success</th><th>last error</th><th class="num">errs</th><th>state</th></tr></thead>
+        <tbody><tr><td colspan="5" class="muted center">no data yet</td></tr></tbody>
+      </table>
+    </div>
+  </section>
 
   <script src="/app.js"></script>
 </body>

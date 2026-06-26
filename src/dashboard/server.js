@@ -21,6 +21,34 @@ function jsonError(res, status, msg) {
   res.status(status).json({ ok: false, error: msg });
 }
 
+function deriveStrategyTags(w, avgBin, openPos) {
+  const tags = [];
+  const wr = w.win_rate || 0;
+  const total = w.total_positions || 0;
+  const pools = w.unique_pools_traded || 0;
+  const pnl = w.total_pnl_usd || 0;
+
+  if (wr > 0.75 && total > 50) tags.push({ text: 'HIGH-PRIVATE', cls: 'high-private' });
+  else if (wr > 0.7) tags.push({ text: 'SOLID-TRADER', cls: 'solid-trader' });
+  else if (wr > 0.6) tags.push({ text: 'STEADY-LP', cls: 'steady-lp' });
+  else if (wr < 0.4 && pnl < 0) tags.push({ text: 'BLEEDING', cls: 'bleeding' });
+
+  if (pools > 80 && avgBin > 50) tags.push({ text: 'MEMECOIN-WIDE', cls: 'memecoin-wide' });
+  else if (pools > 30) tags.push({ text: 'DIVERSIFIED', cls: 'diversified' });
+  else if (pools < 8 && total > 20) tags.push({ text: 'CONCENTRATED', cls: 'concentrated' });
+
+  if (avgBin > 100) tags.push({ text: 'WIDE-BIN', cls: 'wide-bin' });
+  else if (avgBin > 0 && avgBin < 15) tags.push({ text: 'NARROW-BIN', cls: 'narrow-bin' });
+
+  if (openPos > 0) tags.push({ text: 'ACTIVE-NOW', cls: 'active-now' });
+  else if ((w.score || 0) > 65) tags.push({ text: 'ACTIVE-ROW', cls: 'active-row' });
+
+  if (pnl > 1000 && wr > 0.65) tags.push({ text: 'BID-POSITION', cls: 'bid-position' });
+  else if (total < 30 && wr > 0.7) tags.push({ text: 'SPOT-POSITION', cls: 'spot-position' });
+
+  return tags.slice(0, 4);
+}
+
 function safeQuery(fn) {
   try {
     return { ok: true, data: fn() };
@@ -66,18 +94,45 @@ export function createApp() {
   });
 
   app.get('/api/wallets/top', (req, res) => {
-    const limit = Math.min(Number(req.query.limit || 10), 100);
-    const r = safeQuery(() => walletsDb.listWallets({ status: 'top' }, { limit }).map((w) => ({
-      address: w.address,
-      short: w.address.slice(0, 6) + '…' + w.address.slice(-4),
-      score: Number((w.score || 0).toFixed(2)),
-      win_rate: Number(((w.win_rate || 0) * 100).toFixed(1)),
-      total_positions: w.total_positions || 0,
-      total_pnl_usd: Number((w.total_pnl_usd || 0).toFixed(2)),
-      unique_pools_traded: w.unique_pools_traded || 0,
-      last_active: w.last_active,
-      source: w.source,
-    })));
+    const limit = Math.min(Number(req.query.limit || 20), 100);
+    const orderBy = req.query.order || 'score';
+    const status = req.query.status || 'top,tracked';
+    const r = safeQuery(() => {
+      const db = getDb();
+      const statusList = status.split(',').map((s) => s.trim()).filter(Boolean);
+      const placeholders = statusList.map(() => '?').join(',');
+      const rows = db.prepare(`
+        SELECT * FROM wallets
+        WHERE status IN (${placeholders})
+          AND score IS NOT NULL AND score > 0
+        ORDER BY ${orderBy === 'pnl' ? 'total_pnl_usd DESC' : orderBy === 'wr' ? 'win_rate DESC' : 'score DESC'}
+        LIMIT ?
+      `).all(...statusList, limit);
+
+      return rows.map((w) => {
+        const openRow = db.prepare(`SELECT COUNT(*) AS n FROM positions WHERE wallet_address = ? AND status = 'open'`).get(w.address);
+        const binRow = db.prepare(`SELECT AVG(bin_range_width) AS avg_bin FROM positions WHERE wallet_address = ? AND bin_range_width IS NOT NULL AND bin_range_width > 0`).get(w.address);
+        const avgBin = binRow?.avg_bin || 0;
+        return {
+          address: w.address,
+          short: w.address.slice(0, 4) + '…' + w.address.slice(-4),
+          score: Number((w.score || 0).toFixed(2)),
+          win_rate: Number(((w.win_rate || 0) * 100).toFixed(1)),
+          win_count: w.win_count || 0,
+          loss_count: w.loss_count || 0,
+          total_positions: w.total_positions || 0,
+          open_positions: openRow?.n || 0,
+          total_pnl_usd: Number((w.total_pnl_usd || 0).toFixed(2)),
+          total_fees_usd: Number((w.total_fees_usd || 0).toFixed(2)),
+          avg_fee_yield: Number(((w.avg_fee_yield || 0) * 100).toFixed(2)),
+          unique_pools_traded: w.unique_pools_traded || 0,
+          avg_bin_range: Math.round(avgBin),
+          strategy_tags: deriveStrategyTags(w, avgBin, openRow?.n || 0),
+          source: w.source,
+          last_active: w.last_active,
+        };
+      });
+    });
     if (!r.ok) return jsonError(res, 500, r.error);
     res.json({ ok: true, data: r.data });
   });

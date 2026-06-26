@@ -13,14 +13,10 @@
     if (el) el.textContent = val;
   }
 
-  function fmtUptime(seconds) {
-    if (!Number.isFinite(seconds) || seconds < 0) return '--';
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    if (h > 0) return `${h}h ${m}m`;
-    if (m > 0) return `${m}m ${s}s`;
-    return `${s}s`;
+  function escHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[c]);
   }
 
   function fmtAgo(unixSec) {
@@ -34,270 +30,221 @@
 
   function fmtTime(unixSec) {
     if (!unixSec) return '--';
-    const d = new Date(Number(unixSec) * 1000);
-    return `${TIME_FMT.format(d)} (${fmtAgo(unixSec)})`;
+    return `${TIME_FMT.format(new Date(Number(unixSec) * 1000))}`;
   }
 
-  function escHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, (c) => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-    })[c]);
+  function wrClass(wr) {
+    if (wr >= 70) return 'wr-good';
+    if (wr >= 55) return 'wr-mid';
+    return 'wr-bad';
+  }
+
+  function pnlClass(v) { return v >= 0 ? 'pnl-pos' : 'pnl-neg'; }
+
+  function scoreClass(score) {
+    if (score >= 70) return 'score-high';
+    if (score >= 40) return 'score-mid';
+    return 'score-low';
+  }
+
+  function binClass(w) {
+    if (w >= 100) return 'bin-high';
+    if (w >= 30) return 'bin-mid';
+    return 'bin-low';
   }
 
   async function fetchJson(url) {
     const r = await fetch(url, { cache: 'no-store' });
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    if (!r.ok) throw new Error(`${r.status}`);
     return r.json();
   }
 
-  function setStatus(state) {
-    const dot = $('status-dot');
-    if (!dot) return;
-    dot.classList.remove('ok', 'err');
-    if (state === 'ok') dot.classList.add('ok');
-    else if (state === 'err') dot.classList.add('err');
+  function strategyPillsHtml(tags) {
+    if (!tags || !tags.length) return '<span class="muted">—</span>';
+    return '<div class="tag-row">' + tags.map((t) => `<span class="tag ${escHtml(t.cls)}">${escHtml(t.text)}</span>`).join('') + '</div>';
   }
 
-  async function refreshOverview() {
-    try {
-      const r = await fetchJson('/api/overview');
-      if (!r.ok) throw new Error(r.error || 'bad response');
-      const d = r.data;
-      setText('c-wallets-total', NUM_FMT.format(d.wallets.total));
-      setText('c-wallets-top', `${NUM_FMT.format(d.wallets.top)} top`);
-      setText('c-wallets-tracked', `${NUM_FMT.format(d.wallets.tracked)} tracked`);
-      setText('c-wallets-candidate', `${NUM_FMT.format(d.wallets.candidate)} candidate`);
-      setText('c-wallets-rejected', `${NUM_FMT.format(d.wallets.rejected)} rejected`);
-      setText('c-positions-total', NUM_FMT.format(d.positions.total));
-      setText('c-positions-open', `${NUM_FMT.format(d.positions.open)} open`);
-      setText('c-positions-closed', `${NUM_FMT.format(d.positions.closed)} closed`);
-      setText('c-signals-total', NUM_FMT.format(d.signals.total));
-      setText('c-signals-pending', `${NUM_FMT.format(d.signals.pending)} pending`);
-      setText('c-signals-sent', `${NUM_FMT.format(d.signals.sent)} sent`);
-      setText('c-training-total', NUM_FMT.format(d.training_records.total));
-      setText('c-training-exported', `${NUM_FMT.format(d.training_records.exported)} exported`);
-      setText('c-processed-txs', NUM_FMT.format(d.processed_txs));
-      setText('c-snapshots', NUM_FMT.format(d.snapshots));
-      setText('uptime', fmtUptime(d.uptime_s));
-      setStatus('ok');
-    } catch (err) {
-      console.error('overview failed', err);
-      setStatus('err');
-    }
-  }
+  let pollCount = 0;
+  let scanNum = 1;
 
-  async function refreshTopWallets() {
-    try {
-      const r = await fetchJson('/api/wallets/top?limit=10');
-      const tbody = document.querySelector('#table-top-wallets tbody');
-      if (!r.ok || !r.data.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty">no top wallets yet</td></tr>';
-        return;
-      }
-      tbody.innerHTML = r.data.map((w) => `
-        <tr>
-          <td class="mono" title="${escHtml(w.address)}">${escHtml(w.short)}</td>
-          <td class="num"><strong>${w.score}</strong></td>
-          <td class="num">${w.win_rate}%</td>
-          <td class="num">${NUM_FMT.format(w.total_positions)}</td>
-          <td class="num ${w.total_pnl_usd >= 0 ? 'ok-text' : 'stalled'}">${USD_FMT.format(w.total_pnl_usd)}</td>
-          <td class="num">${NUM_FMT.format(w.unique_pools_traded)}</td>
-          <td><span class="pill">${escHtml(w.source || 'unknown')}</span></td>
-        </tr>
-      `).join('');
-    } catch (err) {
-      console.error('top wallets failed', err);
-    }
-  }
+  async function refresh() {
+    pollCount += 1;
+    const status = $('filter-status').value;
+    const order = $('order-by').value;
 
-  async function refreshSignals() {
-    try {
-      const r = await fetchJson('/api/signals/recent?limit=10');
-      const tbody = document.querySelector('#table-signals tbody');
-      if (!r.ok || !r.data.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="empty">no signals yet — waiting for top wallet to enter a screened pool</td></tr>';
-        return;
-      }
-      tbody.innerHTML = r.data.map((s) => {
-        const trig = s.triggered_by || 'unknown';
-        const trigShort = trig.length > 12 ? trig.slice(0, 6) + '…' + trig.slice(-4) : trig;
-        const conf = Number(s.combined_confidence || 0);
-        const pill = s.status === 'sent' ? 'pill-sent' : s.status === 'expired' ? 'pill-rejected' : 'pill-pending';
-        return `
-          <tr>
-            <td class="mono" title="${escHtml(new Date(Number(s.created_at) * 1000).toISOString())}">${escHtml(fmtAgo(s.created_at))}</td>
-            <td>${escHtml(s.token_pair || 'unknown')}</td>
-            <td class="mono" title="${escHtml(trig)}">${escHtml(trigShort)}</td>
-            <td class="num"><strong>${(conf * 100).toFixed(0)}%</strong></td>
-            <td><span class="pill ${pill}">${escHtml(s.status)}</span></td>
-          </tr>
-        `;
-      }).join('');
-    } catch (err) {
-      console.error('signals failed', err);
-    }
-  }
-
-  async function refreshPositions() {
-    try {
-      const r = await fetchJson('/api/positions/recent?status=closed&limit=10');
-      const tbody = document.querySelector('#table-positions tbody');
-      if (!r.ok || !r.data.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty">no closed positions yet</td></tr>';
-        return;
-      }
-      tbody.innerHTML = r.data.map((p) => `
-        <tr>
-          <td class="mono" title="${escHtml(p.id)}">${escHtml(p.short)}</td>
-          <td class="mono" title="${escHtml(p.wallet_address)}">${escHtml(p.wallet_short)}</td>
-          <td>${escHtml(p.token_pair || '—')}</td>
-          <td class="num ${p.pnl_usd >= 0 ? 'ok-text' : 'stalled'}">${USD_FMT.format(p.pnl_usd)}</td>
-          <td class="num">${USD_FMT.format(p.fees_earned_usd)}</td>
-          <td class="num">${p.duration_hours.toFixed(1)}h</td>
-          <td>${p.is_profitable ? '<span class="pill pill-sent">profit</span>' : '<span class="pill pill-rejected">loss</span>'}</td>
-        </tr>
-      `).join('');
-    } catch (err) {
-      console.error('positions failed', err);
-    }
-  }
-
-  async function refreshDiscoveries() {
-    try {
-      const r = await fetchJson('/api/discovery-recent?limit=15');
-      const tbody = document.querySelector('#table-discoveries tbody');
-      if (!r.ok || !r.data.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="empty">no discovery events recorded</td></tr>';
-        return;
-      }
-      tbody.innerHTML = r.data.map((d) => {
-        const wallet = d.wallet_address || '';
-        const walletShort = wallet.length > 12 ? wallet.slice(0, 6) + '…' + wallet.slice(-4) : wallet;
-        const detail = d.source_detail || '';
-        const detailShort = detail.length > 14 ? detail.slice(0, 8) + '…' + detail.slice(-4) : detail;
-        return `
-          <tr>
-            <td class="mono">${escHtml(fmtAgo(d.discovered_at))}</td>
-            <td class="mono" title="${escHtml(wallet)}">${escHtml(walletShort)}</td>
-            <td><span class="pill">${escHtml(d.discovery_source)}</span></td>
-            <td class="mono" title="${escHtml(detail)}">${escHtml(detailShort)}</td>
-          </tr>
-        `;
-      }).join('');
-    } catch (err) {
-      console.error('discoveries failed', err);
-    }
-  }
-
-  async function refreshScoreDistribution() {
-    try {
-      const r = await fetchJson('/api/score-distribution');
-      const target = $('chart-score');
-      if (!r.ok || !r.data.length) {
-        target.innerHTML = '<div class="empty">no scored wallets</div>';
-        return;
-      }
-      const max = Math.max(...r.data.map((d) => d.n), 1);
-      const colors = { '80-100': 'var(--purple)', '60-80': 'var(--blue)', '40-60': 'var(--accent)', '20-40': 'var(--amber)', '1-20': 'var(--muted)', '0': 'var(--muted)' };
-      target.innerHTML = r.data.map((d) => `
-        <div class="bar-row">
-          <div class="bar-label">${escHtml(d.bucket)}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${(d.n / max * 100).toFixed(1)}%; background:${colors[d.bucket] || 'var(--accent)'}"></div></div>
-          <div class="bar-value">${NUM_FMT.format(d.n)}</div>
-        </div>
-      `).join('');
-    } catch (err) {
-      console.error('score distribution failed', err);
-    }
-  }
-
-  async function refreshSources() {
-    try {
-      const r = await fetchJson('/api/discovery-sources');
-      const target = $('chart-sources');
-      if (!r.ok || !r.data.rows.length) {
-        target.innerHTML = '<div class="empty">no discoveries yet</div>';
-        return;
-      }
-      const total = r.data.total || 1;
-      const colors = { 'pool_discovery': 'var(--accent)', 'tx_mining': 'var(--blue)', 'follow_winner': 'var(--purple)', 'manual': 'var(--amber)', 'seed': 'var(--green)' };
-      target.innerHTML = r.data.rows.map((d) => `
-        <div class="bar-row">
-          <div class="bar-label">${escHtml(d.source)}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${(d.n / total * 100).toFixed(1)}%; background:${colors[d.source] || 'var(--accent)'}"></div></div>
-          <div class="bar-value">${NUM_FMT.format(d.n)}</div>
-        </div>
-      `).join('');
-    } catch (err) {
-      console.error('sources failed', err);
-    }
-  }
-
-  async function refreshHealth() {
-    try {
-      const r = await fetchJson('/api/health');
-      const tbody = document.querySelector('#table-health tbody');
-      if (!r.ok || !Object.keys(r.data.subsystems).length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="empty">no subsystem data</td></tr>';
-        return;
-      }
-      const stalled = new Set(r.data.stalled || []);
-      tbody.innerHTML = Object.entries(r.data.subsystems).map(([name, info]) => {
-        const ls = info.lastSuccess ? fmtAgo(info.lastSuccess) : '—';
-        const le = info.lastError ? fmtAgo(info.lastError) : '—';
-        const errCount = info.errorCount ?? 0;
-        const isStalled = stalled.has(name);
-        return `
-          <tr>
-            <td class="mono">${escHtml(name)}</td>
-            <td class="mono">${escHtml(ls)}</td>
-            <td class="mono">${escHtml(le)}</td>
-            <td class="num ${errCount > 0 ? 'stalled' : 'muted'}">${errCount}</td>
-            <td>${isStalled ? '<span class="stalled">STALLED</span>' : '<span class="ok-text">ok</span>'}</td>
-          </tr>
-        `;
-      }).join('');
-    } catch (err) {
-      console.error('health failed', err);
-    }
-  }
-
-  async function refreshCron() {
-    try {
-      const r = await fetchJson('/api/cron-status');
-      const tbody = document.querySelector('#table-cron tbody');
-      const data = r.data || {};
-      const entries = Object.entries(data);
-      if (!entries.length) {
-        tbody.innerHTML = '<tr><td colspan="2" class="empty">no cron metadata yet (scout writes these on first cycle)</td></tr>';
-        return;
-      }
-      tbody.innerHTML = entries.map(([k, v]) => `
-        <tr>
-          <td class="mono">${escHtml(k)}</td>
-          <td class="mono">${escHtml(fmtAgo(v))}</td>
-        </tr>
-      `).join('');
-    } catch (err) {
-      console.error('cron failed', err);
-    }
-  }
-
-  async function refreshAll() {
-    await Promise.all([
-      refreshOverview(),
-      refreshTopWallets(),
-      refreshSignals(),
-      refreshPositions(),
-      refreshDiscoveries(),
-      refreshScoreDistribution(),
-      refreshSources(),
-      refreshHealth(),
-      refreshCron(),
+    const [overview, wallets, signals, positions, sources, health] = await Promise.all([
+      fetchJson('/api/overview').catch(() => ({ data: null })),
+      fetchJson(`/api/wallets/top?limit=20&status=${encodeURIComponent(status)}&order=${order}`).catch(() => ({ data: [] })),
+      fetchJson('/api/signals/recent?limit=8').catch(() => ({ data: [] })),
+      fetchJson('/api/positions/recent?status=closed&limit=8').catch(() => ({ data: [] })),
+      fetchJson('/api/discovery-sources').catch(() => ({ data: { rows: [], total: 0 } })),
+      fetchJson('/api/health').catch(() => ({ data: { subsystems: {}, stalled: [], counters: {} } })),
     ]);
+
+    renderOverview(overview.data);
+    renderWallets(wallets.data || []);
+    renderSignals(signals.data || []);
+    renderPositions(positions.data || []);
+    renderSources(sources.data || { rows: [], total: 0 });
+    renderHealth(health.data || { subsystems: {}, stalled: [] });
+
     setText('last-poll', TIME_FMT.format(new Date()));
+    scanNum += 1;
+    setText('meta-latest-scan', `#${scanNum}`);
+    setText('meta-status', 'LIVE');
   }
 
-  refreshAll();
-  setInterval(refreshAll, POLL_INTERVAL_MS);
+  function renderOverview(d) {
+    if (!d) return;
+    setText('c-wallets-total', NUM_FMT.format(d.wallets.total));
+    setText('c-wallets-top', NUM_FMT.format(d.wallets.top));
+    setText('c-wallets-tracked', NUM_FMT.format(d.wallets.tracked));
+    setText('c-wallets-candidate', NUM_FMT.format(d.wallets.candidate));
+    setText('c-wallets-rejected', NUM_FMT.format(d.wallets.rejected));
+    setText('c-signals-total', NUM_FMT.format(d.signals.total));
+    setText('c-positions-total', NUM_FMT.format(d.positions.total));
+    setText('c-training-total', NUM_FMT.format(d.training_records.total));
+
+    setText('meta-pools', NUM_FMT.format(d.snapshots || 0));
+    setText('meta-wallets', NUM_FMT.format(d.wallets.total));
+  }
+
+  function renderWallets(rows) {
+    const tbody = document.querySelector('#table-wallets tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="12" class="muted center">no wallets match current filter</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map((w, i) => `
+      <tr>
+        <td class="num-col">${(i + 1).toString().padStart(2, '0')}</td>
+        <td class="wallet-col">
+          <span class="wallet-cell" data-address="${escHtml(w.address)}" title="${escHtml(w.address)}">
+            <span class="mono">${escHtml(w.short)}</span>
+            <button class="copy-btn" title="copy address">⧉</button>
+          </span>
+        </td>
+        <td class="num ${scoreClass(w.score)}" style="font-weight:700">${w.score.toFixed(1)}</td>
+        <td class="num ${wrClass(w.win_rate)}">${w.win_rate.toFixed(1)}%</td>
+        <td class="num ${pnlClass(w.total_pnl_usd)}">${USD_FMT.format(w.total_pnl_usd)}</td>
+        <td class="num fee-pos">${USD_FMT.format(w.total_fees_usd)}</td>
+        <td class="num">${w.avg_fee_yield.toFixed(2)}%</td>
+        <td class="num">${NUM_FMT.format(w.unique_pools_traded)}</td>
+        <td class="num">
+          <span class="win-count">${w.win_count}</span>/<span class="loss-count">${w.loss_count}</span>
+        </td>
+        <td class="num">${w.open_positions > 0 ? `<span class="wr-good">${w.open_positions}</span>` : w.open_positions}</td>
+        <td class="num ${binClass(w.avg_bin_range)}">${w.avg_bin_range || '—'}</td>
+        <td class="strategy-col">${strategyPillsHtml(w.strategy_tags)}</td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('.copy-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const span = e.target.parentElement;
+        const addr = span.dataset.address;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(addr).then(() => {
+            btn.textContent = '✓';
+            setTimeout(() => { btn.textContent = '⧉'; }, 1000);
+          });
+        }
+      });
+    });
+  }
+
+  function renderSignals(rows) {
+    const tbody = document.querySelector('#table-signals tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="muted center">no signals yet — waiting for top wallet to enter a screened pool</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map((s) => {
+      const conf = Number(s.combined_confidence || 0);
+      const trig = s.triggered_by || '';
+      const trigShort = trig.length > 12 ? trig.slice(0, 6) + '…' + trig.slice(-4) : trig;
+      const pillCls = s.status === 'sent' ? 'pill-sent' : s.status === 'expired' ? 'pill-expired' : 'pill-pending';
+      return `
+        <tr>
+          <td>${escHtml(fmtAgo(s.created_at))}</td>
+          <td>${escHtml(s.token_pair || '—')}</td>
+          <td class="mono" title="${escHtml(trig)}">${escHtml(trigShort)}</td>
+          <td class="num"><strong>${(conf * 100).toFixed(0)}%</strong></td>
+          <td><span class="pill ${pillCls}">${escHtml(s.status)}</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderPositions(rows) {
+    const tbody = document.querySelector('#table-positions tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="muted center">no closed positions yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map((p) => {
+      const wShort = p.wallet_address.slice(0, 4) + '…' + p.wallet_address.slice(-4);
+      const resultCls = p.is_profitable ? 'pill-profit' : 'pill-loss';
+      const resultTxt = p.is_profitable ? 'profit' : 'loss';
+      return `
+        <tr>
+          <td class="mono" title="${escHtml(p.wallet_address)}">${escHtml(wShort)}</td>
+          <td>${escHtml(p.token_pair || '—')}</td>
+          <td class="num ${pnlClass(p.pnl_usd)}">${USD_FMT.format(p.pnl_usd)}</td>
+          <td class="num fee-pos">${USD_FMT.format(p.fees_earned_usd)}</td>
+          <td class="num">${p.duration_hours.toFixed(1)}h</td>
+          <td><span class="pill ${resultCls}">${resultTxt}</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderSources(d) {
+    const target = $('chart-sources');
+    if (!d.rows || !d.rows.length) {
+      target.innerHTML = '<div class="muted center" style="padding:12px">no data</div>';
+      return;
+    }
+    const total = d.total || 1;
+    target.innerHTML = d.rows.map((row) => `
+      <div class="bar-row">
+        <div class="bar-label">${escHtml(row.source)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(row.n / total * 100).toFixed(1)}%"></div></div>
+        <div class="bar-value">${NUM_FMT.format(row.n)}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderHealth(d) {
+    const tbody = document.querySelector('#table-health tbody');
+    const subs = d.subsystems || {};
+    const entries = Object.entries(subs);
+    if (!entries.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="muted center">no subsystem data (scout writes these on first cycle)</td></tr>';
+      return;
+    }
+    const stalled = new Set(d.stalled || []);
+    tbody.innerHTML = entries.map(([name, info]) => {
+      const ls = info.lastSuccess ? fmtAgo(info.lastSuccess) : '—';
+      const le = info.lastError ? fmtAgo(info.lastError) : '—';
+      const errCount = info.errorCount ?? 0;
+      const isStalled = stalled.has(name);
+      return `
+        <tr>
+          <td class="mono">${escHtml(name)}</td>
+          <td>${escHtml(ls)}</td>
+          <td>${escHtml(le)}</td>
+          <td class="num ${errCount > 0 ? 'pnl-neg' : 'muted'}">${errCount}</td>
+          <td>${isStalled ? '<span class="pill-stalled">STALLED</span>' : '<span class="pill-ok">OK</span>'}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('filter-status').addEventListener('change', () => refresh());
+    document.getElementById('order-by').addEventListener('change', () => refresh());
+    refresh();
+    setInterval(refresh, POLL_INTERVAL_MS);
+  });
 })();
