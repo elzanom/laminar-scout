@@ -4,6 +4,8 @@ Self-discovering wallet tracker for Meteora DLMM LP wallets. Pure data pipeline 
 
 No AI/LLM. No on-chain execution. No trading. Read-only data pipeline that produces a structured training dataset for Laminar (the upstream DLMM agent).
 
+Includes a lightweight **dashboard** (Express + vanilla HTML/JS/CSS) on port 3002 for live monitoring.
+
 ---
 
 ## What it does
@@ -14,6 +16,7 @@ No AI/LLM. No on-chain execution. No trading. Read-only data pipeline that produ
 - **Tracks in real time** — Helius webhook (port 3001) + 30s polling fallback. Every addLiquidity/removeLiquidity/claimFee from tracked wallets is recorded.
 - **Emits signals** — when a `top` wallet opens a position in a pool that passes screening, writes a Laminar-compatible JSON to `signals-output.json`.
 - **Builds dataset** — every closed position becomes a TrainingRecord (69 columns: 8 labels, 13 pool features, 14 token features, 9 position features, 16 wallet features, 2 audit + 7 identity) for Laminar training.
+- **Dashboard** — read-only HTTP frontend on port 3002 for live inspection: wallet counts, top wallets, recent signals, recent positions, score distribution, discovery sources, subsystem health.
 
 ---
 
@@ -376,6 +379,7 @@ Laminar can consume this directly (file polling, REST POST, or shared SQLite).
 | Script | Purpose |
 |--------|---------|
 | `node src/index.js` | Full boot with cron + webhook + live handlers |
+| `node scripts/dashboard.js --port 3002` | Start dashboard server (vanilla HTML/JS/CSS frontend) |
 | `node scripts/smoke-db.js` | CRUD smoke test (uses tmpdir) |
 | `node scripts/smoke-tx-parser.js` | TX parser smoke |
 | `node scripts/smoke-pool-screener.js` | Pool screener smoke |
@@ -388,6 +392,45 @@ Laminar can consume this directly (file polling, REST POST, or shared SQLite).
 | `node scripts/seed.js --file wallets.txt` | Import seed wallets (optional bootstrap) |
 | `node scripts/backfill.js --wallet <addr> --days 90` | Backfill one wallet manually |
 | `node scripts/reevaluate-local.js` | Fast tier re-evaluation from local positions only |
+
+---
+
+## Dashboard
+
+`npm run dashboard` starts an Express-based read-only dashboard on port 3002. It reads the same SQLite DB as the scout (no separate cache), so the data is always live.
+
+**URL:** `http://localhost:3002`
+
+**Sections**:
+- 6 overview cards (wallets, positions, signals, training, processed TXs, snapshots)
+- Top wallets table (top 10 by score)
+- Recent signals (last 10)
+- Recent closed positions (last 10)
+- Recent discovery events (last 15)
+- Score distribution histogram (0–20, 20–40, …, 80–100)
+- Discovery source breakdown
+- Subsystem health (last success, error count, stalled flag)
+- Cron last-run timestamps
+
+**API endpoints** (for direct querying / Grafana / custom tooling):
+
+| Endpoint | Returns |
+|----------|---------|
+| `GET /api/overview` | Counts across all tables + uptime |
+| `GET /api/wallets/top?limit=10` | Top wallets by score |
+| `GET /api/wallets/recent?limit=20` | Recently seen wallets |
+| `GET /api/signals/recent?limit=10` | Recent signals |
+| `GET /api/positions/recent?status=closed&limit=10` | Recent closed positions |
+| `GET /api/health` | Subsystem states + stalled flags |
+| `GET /api/discovery-sources` | Wallet counts by source |
+| `GET /api/score-distribution` | Histogram buckets |
+| `GET /api/discovery-recent?limit=15` | Recent discovery events |
+| `GET /api/cron-status` | Cron last-run timestamps |
+| `GET /healthz` | Liveness check |
+
+Frontend polls every 5s with `cache: 'no-store'`. No WebSocket dependency.
+
+**Production**: PM2 manages dashboard as a separate process (`laminar-scout-dashboard` in `ecosystem.config.cjs`).
 
 ---
 

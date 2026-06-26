@@ -26,5 +26,18 @@ module.exports = {
       error_file: './logs/scout-webhook-err.log',
       merge_logs: true,
     },
+    {
+      name: 'laminar-scout-dashboard',
+      script: 'scripts/dashboard.js',
+      cwd: __dirname,
+      env_file: '.env',
+      watch: false,
+      autorestart: true,
+      max_memory_restart: '256M',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss',
+      out_file: './logs/scout-dashboard-out.log',
+      error_file: './logs/scout-dashboard-err.log',
+      merge_logs: true,
+    },
   ],
 };

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>laminar-scout dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot" id="status-dot"></span>
+      <span class="brand-name">laminar-scout</span>
+      <span class="brand-tag">Meteora DLMM wallet tracker</span>
+    </div>
+    <div class="topbar-meta">
+      <span class="meta-item">uptime <strong id="uptime">--</strong></span>
+      <span class="meta-item">last poll <strong id="last-poll">--</strong></span>
+      <span class="meta-item"><a href="/healthz" target="_blank">/healthz</a></span>
+    </div>
+  </header>
+
+  <main>
+    <section class="cards" id="cards">
+      <div class="card">
+        <div class="card-label">total wallets</div>
+        <div class="card-value" id="c-wallets-total">--</div>
+        <div class="card-sub">
+          <span class="pill pill-top" id="c-wallets-top">-- top</span>
+          <span class="pill pill-tracked" id="c-wallets-tracked">-- tracked</span>
+          <span class="pill pill-candidate" id="c-wallets-candidate">-- candidate</span>
+          <span class="pill pill-rejected" id="c-wallets-rejected">-- rejected</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">positions</div>
+        <div class="card-value" id="c-positions-total">--</div>
+        <div class="card-sub">
+          <span class="pill pill-open" id="c-positions-open">-- open</span>
+          <span class="pill pill-closed" id="c-positions-closed">-- closed</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">signals</div>
+        <div class="card-value" id="c-signals-total">--</div>
+        <div class="card-sub">
+          <span class="pill pill-pending" id="c-signals-pending">-- pending</span>
+          <span class="pill pill-sent" id="c-signals-sent">-- sent</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">training dataset</div>
+        <div class="card-value" id="c-training-total">--</div>
+        <div class="card-sub">
+          <span class="pill" id="c-training-exported">-- exported</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">processed txs</div>
+        <div class="card-value" id="c-processed-txs">--</div>
+        <div class="card-sub">
+          <span class="pill">idempotent dedup</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">market snapshots</div>
+        <div class="card-value" id="c-snapshots">--</div>
+        <div class="card-sub">
+          <span class="pill">pool time-series</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <div class="panel">
+        <h2>top wallets (by score)</h2>
+        <table class="data-table" id="table-top-wallets">
+          <thead>
+            <tr>
+              <th>wallet</th>
+              <th class="num">score</th>
+              <th class="num">WR%</th>
+              <th class="num">positions</th>
+              <th class="num">P&amp;L USD</th>
+              <th class="num">unique pools</th>
+              <th>source</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="7" class="muted">loading…</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2>recent signals</h2>
+        <table class="data-table" id="table-signals">
+          <thead>
+            <tr>
+              <th>time</th>
+              <th>pair</th>
+              <th>trigger</th>
+              <th class="num">conf</th>
+              <th>status</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="5" class="muted">no signals yet</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <div class="panel">
+        <h2>recent closed positions</h2>
+        <table class="data-table" id="table-positions">
+          <thead>
+            <tr>
+              <th>position</th>
+              <th>wallet</th>
+              <th>pair</th>
+              <th class="num">P&amp;L USD</th>
+              <th class="num">fees</th>
+              <th class="num">hours</th>
+              <th>profitable</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="7" class="muted">loading…</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2>recent discoveries</h2>
+        <table class="data-table" id="table-discoveries">
+          <thead>
+            <tr>
+              <th>time</th>
+              <th>wallet</th>
+              <th>source</th>
+              <th>detail</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="4" class="muted">loading…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <div class="panel">
+        <h2>score distribution</h2>
+        <div id="chart-score" class="chart-bars"></div>
+      </div>
+      <div class="panel">
+        <h2>discovery sources</h2>
+        <div id="chart-sources" class="chart-bars"></div>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <div class="panel">
+        <h2>health (subsystems)</h2>
+        <table class="data-table" id="table-health">
+          <thead>
+            <tr><th>subsystem</th><th>last success</th><th>last error</th><th>errors</th><th>stalled</th></tr>
+          </thead>
+          <tbody><tr><td colspan="5" class="muted">loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h2>cron last-run timestamps</h2>
+        <table class="data-table" id="table-cron">
+          <thead>
+            <tr><th>job</th><th>last run</th></tr>
+          </thead>
+          <tbody><tr><td colspan="2" class="muted">loading…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
