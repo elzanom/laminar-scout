@@ -18,5 +18,5 @@ meridian/
 .kimchi/
 
 # runtime outputs (regenerable from build-dataset.js + export-dataset.js)
-dataset/
+/dataset/
 signals-output.json
