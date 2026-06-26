@@ -403,17 +403,21 @@ Run `node scripts/dataset-stats.js` for the live numbers, or see the dashboard "
 | | `fee_earned_usd` / `fee_yield` / `duration_hours` | 99.8% | Same |
 | | `bin_lower` / `bin_upper` / `bin_center_distance` | 11% | Only positions that came through Meteora PnL API path (rest were rent-reclaimed on-chain after close_position) |
 | | `is_out_of_range` / `fee_per_tvl_24h` / `pool_active_bin_id` | 100% | Meteora PnL API |
-| **Wallet** | `wallet_score_at_entry` / `wallet_wr_at_entry` | 100% | Wallet table snapshot |
+| **Wallet** | `wallet_score_at_entry` / `wallet_wr_at_entry` | 100% | Wallet table snapshot (current-state, not at-entry-state — see limitations) |
 | | `wallet_pnl_at_entry` / `wallet_position_count_at_entry` | 100% | Same |
 | | `wallet_is_top_at_entry` / `wallet_is_tracked_at_entry` | 100% | Same |
-| | `wallet_recent_wr_30d` / `wallet_recent_fee_yield_30d` / `wallet_recent_pnl_30d` | 0.9% | Only when wallet had positions closed in the 30d window before entry |
 | | `wallet_activity_span_days` | 100% | First-seen to last-active span |
 | | `wallet_unique_pools_traded` | 100% | backfill-enrichment |
+| | `wallet_recent_wr_30d` / `wallet_recent_fee_yield_30d` / `wallet_recent_pnl_30d` / `wallet_recent_position_count_30d` | 1% | Computed from positions closed in 30d before entry |
+| | `wallet_prior_pnl_usd` / `wallet_prior_fees_usd` / `wallet_prior_capital_usd` / `wallet_prior_win_rate` / `wallet_prior_wins` / `wallet_prior_losses` / `wallet_prior_position_count` | 1% / 100% (count) | **At-entry wallet context** (v5): sum/aggregates of ALL positions closed before this entry, no time window |
+| | `wallet_pool_revisit_count` | 100% | **Pool familiarity** (v6): count of prior positions in the SAME pool before this entry |
+| | `wallet_pool_revisit_pnl_usd` / `wallet_pool_revisit_wr` / `wallet_pool_revisit_fees_usd` | 0.1% | Aggregates from same-pool prior positions |
+| | `is_first_in_pool` | 100% | 1 if wallet's first position in this pool (v6) |
 | | `wallet_discovered_at` / `wallet_position_index` | 100% | Discovery metadata |
 
 ### Known limitations
 
-1. **Wallet context is current-state, not at-entry-state.** `wallet_score_at_entry` etc. reflect the wallet's metrics AT EXPORT TIME, not at the time the position was opened. For Laminar's temporal modeling, treat these as approximate. The 90-day backfill window from Meteora PnL also limits how far back we can evaluate.
+1. **Wallet context is current-state, not at-entry-state.** `wallet_score_at_entry` etc. reflect the wallet's metrics AT EXPORT TIME, not at the time the position was opened. For Laminar's temporal modeling, use the `wallet_prior_*` fields (v5) instead — those are computed from positions closed before this entry's timestamp. Coverage is currently low (1%) because most of our wallets only have positions clustered in the last few days; future evaluations with longer histories will fill these automatically.
 2. **`token_volatility_24h` is a proxy**, not a true standard deviation. It equals `abs(priceChange24h)`. True std dev requires candle history (Birdeye Pro / Jupiter Pro / DexScreener paid).
 3. **`bin_lower`/`bin_upper` (89% missing).** Closed positions' on-chain accounts are rent-reclaimed by Meteora's `close_position`. The remaining 11% came from the Meteora PnL API path which preserves historical bin info.
 4. **`pool_volume_24h`/`fee_tvl_ratio` (96% missing).** Historical market snapshots don't exist in Meteora's free API. We can only fill current snapshots. For Laminar, this means market-context features at entry are not reliable.
