@@ -1,0 +1,30 @@
+module.exports = {
+  apps: [
+    {
+      name: 'laminar-scout',
+      script: 'src/index.js',
+      cwd: __dirname,
+      env_file: '.env',
+      watch: false,
+      autorestart: true,
+      max_memory_restart: '512M',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss',
+      out_file: './logs/scout-out.log',
+      error_file: './logs/scout-err.log',
+      merge_logs: true,
+    },
+    {
+      name: 'laminar-scout-webhook',
+      script: 'src/collector/helius-stream.js',
+      cwd: __dirname,
+      env_file: '.env',
+      watch: false,
+      autorestart: true,
+      max_memory_restart: '256M',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss',
+      out_file: './logs/scout-webhook-out.log',
+      error_file: './logs/scout-webhook-err.log',
+      merge_logs: true,
+    },
+  ],
+};

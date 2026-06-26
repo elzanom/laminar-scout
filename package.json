@@ -1,0 +1,33 @@
+{
+  "name": "laminar-scout",
+  "version": "0.1.0",
+  "description": "Self-discovering wallet tracker + data pipeline for Meteora DLMM top LP wallets. Feeds training data + signals to Laminar.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "webhook": "node src/collector/helius-stream.js",
+    "backfill": "node scripts/backfill.js",
+    "seed": "node scripts/seed.js",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:logs": "pm2 logs laminar-scout",
+    "pm2:restart": "pm2 restart laminar-scout",
+    "pm2:stop": "pm2 stop laminar-scout",
+    "smoke:db": "node scripts/smoke-db.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@meteora-ag/dlmm": "^1.9.4",
+    "@solana/spl-token": "^0.4.6",
+    "@solana/web3.js": "^1.95.0",
+    "better-sqlite3": "^12.11.1",
+    "bn.js": "^5.2.1",
+    "bs58": "^6.0.0",
+    "dotenv": "^16.4.5",
+    "jsonrepair": "^3.7.1",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {}
+}

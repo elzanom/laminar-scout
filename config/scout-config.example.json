@@ -1,0 +1,88 @@
+{
+  "// Wallet Discovery": "",
+  "discoveryEnabled": true,
+  "discoveryIntervalMinutes": 60,
+  "poolDiscoveryEnabled": true,
+  "txMiningEnabled": true,
+  "followWinnersEnabled": true,
+  "maxWalletCandidatesPerCycle": 100,
+  "minPositionsToEvaluate": 10,
+  "evaluationBackfillDays": 90,
+  "reEvaluateIntervalHours": 168,
+
+  "// Wallet Tier Thresholds": "",
+  "minWalletScore": 45,
+  "minWinRate": 0.65,
+  "minTotalPositions": 20,
+  "minFeeYield": 0.5,
+  "topWalletLimit": 100,
+  "autoPromoteToTracked": true,
+  "autoDemoteTopWallet": true,
+
+  "// Pool Screening (ported from meridian)": "",
+  "minFeeActiveTvlRatio": 0.05,
+  "minTvl": 10000,
+  "maxTvl": 150000,
+  "minVolume": 500,
+  "minOrganic": 60,
+  "minBinStep": 80,
+  "maxBinStep": 125,
+  "minTokenFeesSol": 30,
+
+  "// Pool Screening time window (default 4h, see screening-scales.js)": "",
+  "screeningTimeframe": "4h",
+
+  "// Pool Discovery category (semantic mode — Meteora pool-discovery API ignores sort_by/category URL params, so this affects LOCAL ranking in getTopCandidates). Values: 'trending' (default: rank by fee/TVL+organic+volume via scoreCandidate+degenScore), 'new' (rank by pool recency), 'all' (take Meteora's default order). NOT a pool-type filter — scout is DLMM-only and always filters pool_type=dlmm at the API level.",
+  "poolDiscoveryCategory": "trending",
+
+  "// Signal Validation": "",
+  "minCombinedConfidence": 0.70,
+  "signalExpiryMinutes": 60,
+  "signalDedupWindowMinutes": 15,
+
+  "// Collection": "",
+  "backfillDays": 90,
+  "snapshotIntervalMinutes": 15,
+  "walletRankUpdateIntervalMinutes": 60,
+  "screeningIntervalMinutes": 30,
+
+  "// TX parser program ID (overrides the wrong value in SPEC.md)": "",
+  "meteoraProgramId": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",
+
+  "// Output": "",
+  "signalOutputMode": "file",
+  "signalOutputPath": "./signals-output.json",
+  "signalApiEndpoint": "",
+
+  "// Dataset Export": "",
+  "datasetExportPath": "./dataset/training-records.csv",
+  "autoExportOnClose": true,
+
+  "// Seed (opsional)": "",
+  "seedWalletsFile": "",
+  "seedWalletsOnStartup": false,
+
+  "// Health & observability (improvement #7)": "",
+  "healthHeartbeatMinutes": 60,
+  "healthStallWarnMinutes": 180,
+
+  "// Helius webhook vs polling": "",
+  "webhookEnabled": true,
+  "pollingFallbackEnabled": true,
+  "pollingIntervalSeconds": 30,
+
+  "// Retry / API budget": "",
+  "retryMaxAttempts": 5,
+  "retryMaxElapsedMs": 60000,
+  "retryPerAttemptTimeoutMs": 15000,
+  "heliusRateLimitPerMinute": 60,
+
+  "// Agent Meridian API (optional enrichment, do NOT hard-depend)": "",
+  "agentMeridianUrl": "https://api.agentmeridian.xyz/api",
+  "agentMeridianApiKey": "bWVyaWRpYW4taXMtdGhlLWJlc3QtYWdlbnRz",
+  "agentMeridianEnabled": false,
+
+  "// Logs": "",
+  "logDir": "./logs",
+  "logLevel": "info"
+}
