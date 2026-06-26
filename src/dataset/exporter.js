@@ -29,6 +29,8 @@ const COLUMNS = [
   'wallet_recent_wr_30d', 'wallet_recent_fee_yield_30d',
   'wallet_recent_pnl_30d', 'wallet_recent_position_count_30d',
   'wallet_activity_span_days', 'wallet_unique_pools_traded',
+  'wallet_prior_pnl_usd', 'wallet_prior_fees_usd', 'wallet_prior_capital_usd',
+  'wallet_prior_position_count', 'wallet_prior_win_rate', 'wallet_prior_wins', 'wallet_prior_losses',
   'wallet_discovery_source', 'wallet_discovered_at', 'wallet_position_index',
   'exported_at', 'created_at',
 ];

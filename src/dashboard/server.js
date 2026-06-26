@@ -272,6 +272,8 @@ export function createApp() {
         'pool_launchpad','pool_volume_24h','fee_tvl_ratio',
         'bin_lower','bin_upper','is_out_of_range','fee_per_tvl_24h','pnl_sol',
         'wallet_score_at_entry','wallet_wr_at_entry','wallet_recent_wr_30d',
+        'wallet_prior_pnl_usd','wallet_prior_fees_usd','wallet_prior_capital_usd',
+        'wallet_prior_position_count','wallet_prior_win_rate',
       ];
       const coverage = {};
       for (const f of fields) {

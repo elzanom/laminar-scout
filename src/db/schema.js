@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 import { getConfig } from '../config/config.js';
 import { log } from '../utils/logger.js';
 
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 const MIGRATIONS = [
   {
@@ -73,6 +73,25 @@ const MIGRATIONS = [
       _addCol('training_records', 'token_num_buys_5m', 'INTEGER');
       _addCol('training_records', 'token_num_sells_5m', 'INTEGER');
       _addCol('training_records', 'token_buy_sell_ratio_5m', 'REAL');
+    },
+  },
+  {
+    version: 5,
+    description: 'Add wallet_prior_* fields: wallet state computed from positions closed BEFORE this entry',
+    up: (db) => {
+      const _addCol = (table, col, decl) => {
+        const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
+        if (!cols.includes(col)) {
+          db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${decl}`);
+        }
+      };
+      _addCol('training_records', 'wallet_prior_pnl_usd', 'REAL');
+      _addCol('training_records', 'wallet_prior_fees_usd', 'REAL');
+      _addCol('training_records', 'wallet_prior_capital_usd', 'REAL');
+      _addCol('training_records', 'wallet_prior_position_count', 'INTEGER');
+      _addCol('training_records', 'wallet_prior_win_rate', 'REAL');
+      _addCol('training_records', 'wallet_prior_wins', 'INTEGER');
+      _addCol('training_records', 'wallet_prior_losses', 'INTEGER');
     },
   },
 ];

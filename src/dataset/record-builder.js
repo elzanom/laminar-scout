@@ -73,6 +73,9 @@ export async function buildTrainingRecordFromPosition(position) {
   const recentPositions = _recentClosedPositions(position.wallet_address, position.entry_timestamp, 30 * 86400);
   const recentStats = _computeRecentStats(recentPositions);
 
+  const priorPositions = _priorClosedPositions(position.wallet_address, position.entry_timestamp);
+  const priorStats = _computePriorStats(priorPositions);
+
   const record = {
     position_id: position.id,
     wallet_address: position.wallet_address,
@@ -142,6 +145,15 @@ export async function buildTrainingRecordFromPosition(position) {
     wallet_recent_fee_yield_30d: recentStats.recent_fee_yield,
     wallet_recent_pnl_30d: recentStats.recent_pnl,
     wallet_recent_position_count_30d: recentStats.recent_count,
+    // wallet_prior_* = wallet state computed from positions closed BEFORE this entry.
+    // These provide genuine at-entry context (vs wallet_*_at_entry which is current-state).
+    wallet_prior_pnl_usd: _safeNumber(priorStats.prior_pnl_usd),
+    wallet_prior_fees_usd: _safeNumber(priorStats.prior_fees_usd),
+    wallet_prior_capital_usd: _safeNumber(priorStats.prior_capital_usd),
+    wallet_prior_position_count: priorStats.prior_position_count ?? null,
+    wallet_prior_win_rate: priorStats.prior_win_rate,
+    wallet_prior_wins: priorStats.prior_wins,
+    wallet_prior_losses: priorStats.prior_losses,
     wallet_activity_span_days: (wallet?.first_seen && wallet?.last_active)
       ? Number(((wallet.last_active - wallet.first_seen) / 86400).toFixed(2))
       : null,
@@ -168,6 +180,54 @@ function _recentClosedPositions(walletAddress, beforeTs, windowSec) {
   } catch {
     return [];
   }
+}
+
+// All positions closed before this entry (no time window).
+// Used to compute at-entry wallet context — what was the wallet doing BEFORE
+// opening this position? Captures lifetime PnL, fees, capital deployed, win rate
+// up to (but excluding) the entry moment.
+function _priorClosedPositions(walletAddress, beforeTs) {
+  try {
+    if (!beforeTs) return [];
+    return positionsDb.listPositions(
+      { wallet_address: walletAddress, status: 'closed', exit_before: beforeTs },
+      { limit: 5000, orderBy: 'exit_timestamp DESC' },
+    );
+  } catch {
+    return [];
+  }
+}
+
+function _computePriorStats(positions) {
+  if (!positions.length) {
+    return {
+      prior_pnl_usd: null,
+      prior_fees_usd: null,
+      prior_capital_usd: null,
+      prior_position_count: 0,
+      prior_win_rate: null,
+      prior_wins: null,
+      prior_losses: null,
+    };
+  }
+  let wins = 0, losses = 0, fees = 0, deposits = 0, pnl = 0;
+  for (const p of positions) {
+    if (p.pnl_usd > 0) wins += 1;
+    else if (p.pnl_usd < 0) losses += 1;
+    fees += p.fees_earned_usd || 0;
+    deposits += p.capital_usd || 0;
+    pnl += p.pnl_usd || 0;
+  }
+  const total = positions.length;
+  return {
+    prior_pnl_usd: pnl,
+    prior_fees_usd: fees,
+    prior_capital_usd: deposits,
+    prior_position_count: total,
+    prior_win_rate: total > 0 ? wins / total : null,
+    prior_wins: wins,
+    prior_losses: losses,
+  };
 }
 
 function _computeRecentStats(positions) {
