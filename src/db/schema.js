@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 import { getConfig } from '../config/config.js';
 import { log } from '../utils/logger.js';
 
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 const MIGRATIONS = [
   {
@@ -54,6 +54,25 @@ const MIGRATIONS = [
       if (!cols.includes('pool_token_x_age_hours')) {
         db.exec(`ALTER TABLE training_records ADD COLUMN pool_token_x_age_hours REAL`);
       }
+    },
+  },
+  {
+    version: 4,
+    description: 'Add Jupiter-sourced token fields: mcap, liquidity, created_at, stats5m metrics, volatility proxy',
+    up: (db) => {
+      const _addCol = (table, col, decl) => {
+        const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
+        if (!cols.includes(col)) {
+          db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${decl}`);
+        }
+      };
+      _addCol('training_records', 'token_x_mcap', 'REAL');
+      _addCol('training_records', 'token_x_liquidity', 'REAL');
+      _addCol('training_records', 'token_x_created_at', 'INTEGER');
+      _addCol('training_records', 'token_volatility_24h', 'REAL');
+      _addCol('training_records', 'token_num_buys_5m', 'INTEGER');
+      _addCol('training_records', 'token_num_sells_5m', 'INTEGER');
+      _addCol('training_records', 'token_buy_sell_ratio_5m', 'REAL');
     },
   },
 ];

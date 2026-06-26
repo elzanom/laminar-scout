@@ -69,6 +69,16 @@ function buildConfig() {
       apiKey: process.env.BIRDEYE_API_KEY || '',
     },
 
+    gmgn: {
+      apiKey: process.env.GMGN_API_KEY || '',
+      baseUrl: 'https://gmgn.ai/defi/quotation/v1',
+    },
+
+    jupiter: {
+      apiKey: process.env.JUPITER_API_KEY || '',
+      baseUrl: 'https://api.jup.ag',
+    },
+
     webhook: {
       port: num(process.env.WEBHOOK_PORT, 3001),
     },
