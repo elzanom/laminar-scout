@@ -415,6 +415,7 @@ Run `node scripts/dataset-stats.js` for the live numbers, or see the dashboard "
 | | `wallet_pool_revisit_count` | 100% | **Pool familiarity** (v6): count of prior positions in the SAME pool before this entry |
 | | `wallet_pool_revisit_pnl_usd` / `wallet_pool_revisit_wr` / `wallet_pool_revisit_fees_usd` | 0.1% | Aggregates from same-pool prior positions |
 | | `is_first_in_pool` | 100% | 1 if wallet's first position in this pool (v6) |
+| **Pool context at entry** | `position_in_pool_count` | 100% | **Competition density** (v8): count of all positions in this pool at entry timestamp |
 | | `wallet_discovered_at` / `wallet_position_index` | 100% | Discovery metadata |
 
 ### Known limitations
