@@ -24,28 +24,46 @@ const PRICE_V3_URL = 'https://api.jup.ag/price/v3';
 const TOKENS_V2_URL = 'https://api.jup.ag/tokens/v2/search';
 
 function parseArgs(argv) {
-  const args = { rate: 0.05, concurrency: 2, dryRun: false };
+  // Defaults tuned for Jupiter FREE tier (1 RPS). For Developer/Launch/Pro
+  // (10+ RPS), you can safely bump concurrency to 3-5 and lower rate to 0.1.
+  const args = { rate: 1.5, concurrency: 1, dryRun: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--rate') args.rate = Number(argv[++i]);
     else if (argv[i] === '--concurrency') args.concurrency = Number(argv[++i]);
     else if (argv[i] === '--dry-run') args.dryRun = true;
     else if (argv[i] === '--help' || argv[i] === '-h') {
       console.log('Usage: node scripts/backfill-jupiter.js [--rate SEC] [--concurrency N] [--dry-run]');
+      console.log('');
+      console.log('Defaults (--rate 1.5 --concurrency 1) are tuned for Jupiter FREE tier (1 RPS).');
+      console.log('For paid tiers (Developer 10 RPS, Launch 50 RPS, Pro 150 RPS), try:');
+      console.log('  --rate 0.12 --concurrency 4');
       process.exit(0);
     }
   }
   return args;
 }
 
-async function jupiterFetch(url, apiKey, retries = 3) {
+async function jupiterFetch(url, apiKey, retries = 6) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     const r = await fetch(url, { headers: { 'x-api-key': apiKey } });
     if (r.status === 429 && attempt < retries) {
-      const wait = 2000 * Math.pow(2, attempt);
+      // Respect Retry-After header if present, else exponential backoff
+      const ra = Number(r.headers.get('retry-after'));
+      const wait = Number.isFinite(ra) && ra > 0
+        ? ra * 1000
+        : 3000 * Math.pow(2, attempt);  // 3s, 6s, 12s, 24s, 48s, 96s
+      console.log(`    [429] attempt ${attempt + 1}/${retries + 1}, backing off ${Math.round(wait/1000)}s`);
       await new Promise((res) => setTimeout(res, wait));
       continue;
     }
-    if (!r.ok) throw new Error(`Jupiter ${r.status}`);
+    if (r.status === 429) {
+      const body = await r.text().catch(() => '');
+      throw new Error(`Jupiter 429 retries exhausted: ${body.slice(0, 100)}`);
+    }
+    if (!r.ok) {
+      const body = await r.text().catch(() => '');
+      throw new Error(`Jupiter ${r.status}: ${body.slice(0, 100)}`);
+    }
     return r.json();
   }
   throw new Error('Jupiter retries exhausted');

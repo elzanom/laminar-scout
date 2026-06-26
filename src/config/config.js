@@ -70,8 +70,12 @@ function buildConfig() {
     },
 
     gmgn: {
+      // NOTE: gmgn.ai REST endpoints are Cloudflare-gated and return 403
+      // server-side even with a valid x-api-key. Use gmgn-cli locally to
+      // backfill from GMGN, then pipe into the dataset. Reserved for future.
       apiKey: process.env.GMGN_API_KEY || '',
       baseUrl: 'https://gmgn.ai/defi/quotation/v1',
+      enabled: false,
     },
 
     jupiter: {
