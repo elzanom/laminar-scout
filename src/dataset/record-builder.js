@@ -76,6 +76,9 @@ export async function buildTrainingRecordFromPosition(position) {
   const priorPositions = _priorClosedPositions(position.wallet_address, position.entry_timestamp);
   const priorStats = _computePriorStats(priorPositions);
 
+  const priorInPoolPositions = _priorInPoolPositions(position.wallet_address, position.pool_address, position.entry_timestamp);
+  const priorInPoolStats = _computePriorInPoolStats(priorInPoolPositions);
+
   const record = {
     position_id: position.id,
     wallet_address: position.wallet_address,
@@ -154,6 +157,12 @@ export async function buildTrainingRecordFromPosition(position) {
     wallet_prior_win_rate: priorStats.prior_win_rate,
     wallet_prior_wins: priorStats.prior_wins,
     wallet_prior_losses: priorStats.prior_losses,
+    // wallet_pool_revisit_* = prior positions in the SAME pool (familiarity signal).
+    wallet_pool_revisit_count: priorInPoolStats.pool_revisit_count,
+    wallet_pool_revisit_pnl_usd: _safeNumber(priorInPoolStats.pool_revisit_pnl_usd),
+    wallet_pool_revisit_wr: priorInPoolStats.pool_revisit_wr,
+    wallet_pool_revisit_fees_usd: _safeNumber(priorInPoolStats.pool_revisit_fees_usd),
+    is_first_in_pool: priorInPoolStats.is_first_in_pool,
     wallet_activity_span_days: (wallet?.first_seen && wallet?.last_active)
       ? Number(((wallet.last_active - wallet.first_seen) / 86400).toFixed(2))
       : null,
@@ -227,6 +236,47 @@ function _computePriorStats(positions) {
     prior_win_rate: total > 0 ? wins / total : null,
     prior_wins: wins,
     prior_losses: losses,
+  };
+}
+
+// Positions the same wallet had in the SAME POOL, closed BEFORE this entry.
+// Captures "pool familiarity" — wallets that revisit a pool likely have more
+// conviction / better understanding of that specific pool's dynamics.
+function _priorInPoolPositions(walletAddress, poolAddress, beforeTs) {
+  try {
+    if (!beforeTs || !walletAddress || !poolAddress) return [];
+    return positionsDb.listPositions(
+      { wallet_address: walletAddress, pool_address: poolAddress, status: 'closed', exit_before: beforeTs },
+      { limit: 1000, orderBy: 'exit_timestamp DESC' },
+    );
+  } catch {
+    return [];
+  }
+}
+
+function _computePriorInPoolStats(positions) {
+  if (!positions.length) {
+    return {
+      pool_revisit_count: 0,
+      pool_revisit_pnl_usd: null,
+      pool_revisit_wr: null,
+      pool_revisit_fees_usd: null,
+      is_first_in_pool: 1,
+    };
+  }
+  let wins = 0, fees = 0, pnl = 0;
+  for (const p of positions) {
+    if (p.pnl_usd > 0) wins += 1;
+    fees += p.fees_earned_usd || 0;
+    pnl += p.pnl_usd || 0;
+  }
+  const total = positions.length;
+  return {
+    pool_revisit_count: total,
+    pool_revisit_pnl_usd: pnl,
+    pool_revisit_wr: total > 0 ? wins / total : null,
+    pool_revisit_fees_usd: fees,
+    is_first_in_pool: 0,
   };
 }
 

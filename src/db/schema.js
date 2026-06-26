@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 import { getConfig } from '../config/config.js';
 import { log } from '../utils/logger.js';
 
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 const MIGRATIONS = [
   {
@@ -92,6 +92,23 @@ const MIGRATIONS = [
       _addCol('training_records', 'wallet_prior_win_rate', 'REAL');
       _addCol('training_records', 'wallet_prior_wins', 'INTEGER');
       _addCol('training_records', 'wallet_prior_losses', 'INTEGER');
+    },
+  },
+  {
+    version: 6,
+    description: 'Add wallet_pool_revisit_* fields: position familiarity in the same pool BEFORE this entry',
+    up: (db) => {
+      const _addCol = (table, col, decl) => {
+        const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
+        if (!cols.includes(col)) {
+          db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${decl}`);
+        }
+      };
+      _addCol('training_records', 'wallet_pool_revisit_count', 'INTEGER');
+      _addCol('training_records', 'wallet_pool_revisit_pnl_usd', 'REAL');
+      _addCol('training_records', 'wallet_pool_revisit_wr', 'REAL');
+      _addCol('training_records', 'wallet_pool_revisit_fees_usd', 'REAL');
+      _addCol('training_records', 'is_first_in_pool', 'INTEGER');
     },
   },
 ];
