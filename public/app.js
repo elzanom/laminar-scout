@@ -72,13 +72,14 @@
     const status = $('filter-status').value;
     const order = $('order-by').value;
 
-    const [overview, wallets, signals, positions, sources, health] = await Promise.all([
+    const [overview, wallets, signals, positions, sources, health, summary] = await Promise.all([
       fetchJson('/api/overview').catch(() => ({ data: null })),
       fetchJson(`/api/wallets/top?limit=20&status=${encodeURIComponent(status)}&order=${order}`).catch(() => ({ data: [] })),
       fetchJson('/api/signals/recent?limit=8').catch(() => ({ data: [] })),
       fetchJson('/api/positions/recent?status=closed&limit=8').catch(() => ({ data: [] })),
       fetchJson('/api/discovery-sources').catch(() => ({ data: { rows: [], total: 0 } })),
       fetchJson('/api/health').catch(() => ({ data: { subsystems: {}, stalled: [], counters: {} } })),
+      fetchJson('/api/dataset-summary').catch(() => ({ data: null })),
     ]);
 
     renderOverview(overview.data);
@@ -87,6 +88,7 @@
     renderPositions(positions.data || []);
     renderSources(sources.data || { rows: [], total: 0 });
     renderHealth(health.data || { subsystems: {}, stalled: [] });
+    renderCoverage(summary.data);
 
     setText('last-poll', TIME_FMT.format(new Date()));
     scanNum += 1;
@@ -197,6 +199,29 @@
         </tr>
       `;
     }).join('');
+  }
+
+  function renderCoverage(d) {
+    const target = $('coverage-bars');
+    const meta = $('coverage-meta');
+    if (!d || !d.coverage) {
+      target.innerHTML = '<div class="muted center" style="padding:12px">no data</div>';
+      meta.textContent = '';
+      return;
+    }
+    const entries = Object.entries(d.coverage).sort((a, b) => b[1].pct - a[1].pct);
+    target.innerHTML = entries.map(([name, info]) => {
+      const flag = info.pct >= 95 ? '✓' : info.pct >= 50 ? '~' : info.pct > 0 ? '!' : '×';
+      const color = info.pct >= 95 ? 'var(--cyan)' : info.pct >= 50 ? 'var(--blue)' : info.pct > 0 ? 'var(--yellow)' : 'var(--muted)';
+      return `
+        <div class="bar-row">
+          <div class="bar-label">${flag} ${escHtml(name)}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${info.pct.toFixed(1)}%; background:${color}"></div></div>
+          <div class="bar-value">${info.pct.toFixed(0)}%</div>
+        </div>
+      `;
+    }).join('');
+    meta.textContent = `${d.total} records · ${d.pools} pools · ${d.wallets} wallets · ${d.profitable} profitable (${(d.profitable/d.total*100).toFixed(1)}%) · ${d.exported} exported · ${d.exportable} pending`;
   }
 
   function renderSources(d) {

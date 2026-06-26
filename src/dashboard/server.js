@@ -244,12 +244,41 @@ export function createApp() {
   app.get('/api/cron-status', (_req, res) => {
     const r = safeQuery(() => {
       const db = getDb();
-      const rows = getDb().prepare(`
+      const rows = db.getDb().prepare(`
         SELECT key, value FROM meta WHERE key LIKE 'last_%' OR key LIKE 'cron_%' ORDER BY key
       `).all();
       const obj = {};
       for (const r of rows) obj[r.key] = r.value;
       return obj;
+    });
+    if (!r.ok) return jsonError(res, 500, r.error);
+    res.json({ ok: true, data: r.data });
+  });
+
+  app.get('/api/dataset-summary', (_req, res) => {
+    const r = safeQuery(() => {
+      const total = getDb().prepare('SELECT COUNT(*) AS n FROM training_records').get().n;
+      const exportable = getDb().prepare('SELECT COUNT(*) AS n FROM training_records WHERE exported_at IS NULL').get().n;
+      const exported = getDb().prepare('SELECT COUNT(*) AS n FROM training_records WHERE exported_at IS NOT NULL').get().n;
+      const profitable = getDb().prepare('SELECT COUNT(*) AS n FROM training_records WHERE was_profitable = 1').get().n;
+      const pools = getDb().prepare('SELECT COUNT(DISTINCT pool_address) AS n FROM training_records').get().n;
+      const wallets = getDb().prepare('SELECT COUNT(DISTINCT wallet_address) AS n FROM training_records').get().n;
+
+      // Coverage for the most important feature categories
+      const fields = [
+        'token_pair','pool_bin_step','token_x_market_cap','token_x_fdv','token_x_mcap','token_x_liquidity',
+        'token_x_organic_score','token_x_is_verified','token_price_change_24h','token_volatility_24h',
+        'token_num_buys_5m','token_num_sells_5m','token_buy_sell_ratio_5m',
+        'pool_launchpad','pool_volume_24h','fee_tvl_ratio',
+        'bin_lower','bin_upper','is_out_of_range','fee_per_tvl_24h','pnl_sol',
+        'wallet_score_at_entry','wallet_wr_at_entry','wallet_recent_wr_30d',
+      ];
+      const coverage = {};
+      for (const f of fields) {
+        const row = getDb().prepare(`SELECT COUNT(*) AS n FROM training_records WHERE ${f} IS NOT NULL AND ${f} != ''`).get();
+        coverage[f] = { count: row.n, pct: total ? +(row.n / total * 100).toFixed(1) : 0 };
+      }
+      return { total, exportable, exported, profitable, pools, wallets, coverage };
     });
     if (!r.ok) return jsonError(res, 500, r.error);
     res.json({ ok: true, data: r.data });
