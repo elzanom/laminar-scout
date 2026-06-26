@@ -16,8 +16,9 @@ export function insertTrainingRecord(rec) {
       pool_launchpad, pool_has_farm, pool_farm_apr, pool_dynamic_fee_pct, pool_current_price,
       token_pair, token_pair_base_mint, token_pair_quote_mint, days_since_pool_created, pool_token_x_age_hours,
       token_x_symbol, token_x_market_cap, token_x_fdv, token_x_holders, token_x_organic_score,
-      token_x_is_verified, token_x_freeze_disabled, token_x_mcap, token_x_liquidity, token_x_created_at,
-      token_y_symbol, token_y_is_sol,
+      token_x_is_verified, token_x_freeze_disabled, token_x_total_supply, token_x_circ_supply,
+      token_x_mcap, token_x_liquidity, token_x_created_at,
+      token_y_symbol, token_y_is_sol, token_y_total_supply, token_y_circ_supply,
       token_volatility_24h, token_price_change_24h, volume_vs_7d_avg,
       token_num_buys_5m, token_num_sells_5m, token_buy_sell_ratio_5m,
       bin_range_width, bin_lower, bin_upper, bin_center_distance, is_out_of_range, fee_per_tvl_24h,
@@ -35,8 +36,8 @@ export function insertTrainingRecord(rec) {
       wallet_discovery_source, wallet_discovered_at, wallet_position_index,
       created_at
     ) VALUES (
-      ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
-      ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+      ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+      ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
     )
   `).run(
     rec.position_id,
@@ -76,11 +77,15 @@ export function insertTrainingRecord(rec) {
     rec.token_x_organic_score ?? null,
     rec.token_x_is_verified ?? null,
     rec.token_x_freeze_disabled ?? null,
+    rec.token_x_total_supply ?? null,
+    rec.token_x_circ_supply ?? null,
     rec.token_x_mcap ?? null,
     rec.token_x_liquidity ?? null,
     rec.token_x_created_at ?? null,
     rec.token_y_symbol ?? null,
     rec.token_y_is_sol ?? null,
+    rec.token_y_total_supply ?? null,
+    rec.token_y_circ_supply ?? null,
     rec.token_volatility_24h ?? null,
     rec.token_price_change_24h ?? null,
     rec.volume_vs_7d_avg ?? null,

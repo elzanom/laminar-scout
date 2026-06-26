@@ -121,8 +121,12 @@ export async function buildTrainingRecordFromPosition(position) {
     token_x_organic_score: _safeNumber(tx.organic_score),
     token_x_is_verified: tx.is_verified == null ? null : (tx.is_verified ? 1 : 0),
     token_x_freeze_disabled: tx.freeze_authority_disabled == null ? null : (tx.freeze_authority_disabled ? 1 : 0),
+    token_x_total_supply: _safeNumber(tx.total_supply),
+    token_x_circ_supply: null,  // Meteora pool-detail does not expose circulating supply
     token_y_symbol: ty.symbol || null,
     token_y_is_sol: (tokenY === 'So11111111111111111111111111111111111111112') ? 1 : 0,
+    token_y_total_supply: _safeNumber(ty.total_supply),
+    token_y_circ_supply: null,  // Meteora pool-detail does not expose circulating supply
     token_volatility_24h: _safeNumber(snapshot?.token_volatility_24h),
     token_price_change_24h: _safeNumber(snapshot?.token_price_change_24h),
     volume_vs_7d_avg: null,

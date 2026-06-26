@@ -40,10 +40,12 @@ function buildReport(db) {
   };
 
   const coverageFields = [
-    'token_pair','pool_bin_step','token_x_market_cap','token_x_holders','token_x_fdv','token_x_mcap',
+    'token_pair','pool_bin_step',    'token_x_market_cap','token_x_holders','token_x_fdv','token_x_mcap',
     'token_x_liquidity','token_x_is_verified','token_x_created_at','token_x_organic_score',
+    'token_x_total_supply',
     'token_price_change_24h','token_volatility_24h','token_num_buys_5m','token_num_sells_5m',
-    'token_buy_sell_ratio_5m','pool_launchpad','pool_current_price','pool_dynamic_fee_pct',
+    'token_buy_sell_ratio_5m','token_y_total_supply',
+    'pool_launchpad','pool_current_price','pool_dynamic_fee_pct',
     'pool_token_x_age_hours','pool_volume_24h','fee_tvl_ratio','pool_fee_apr','pool_apr','pool_apy',
     'bin_lower','bin_upper','bin_center_distance','bin_range_width','is_out_of_range',
     'fee_per_tvl_24h','pnl_usd','pnl_sol','pnl_pct','duration_hours','fee_yield','fee_earned_usd',
