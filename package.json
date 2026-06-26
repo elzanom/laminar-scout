@@ -22,7 +22,9 @@
     "pm2:logs": "pm2 logs laminar-scout",
     "pm2:restart": "pm2 restart laminar-scout",
     "pm2:stop": "pm2 stop laminar-scout",
-    "smoke:db": "node scripts/smoke-db.js"
+    "smoke:db": "node scripts/smoke-db.js",
+    "test": "node scripts/test-all.js",
+    "test:smoke": "node scripts/smoke-db.js && node scripts/smoke-tx-parser.js && node scripts/smoke-pool-screener.js && node scripts/smoke-discovery.js && node scripts/smoke-step5.js"
   },
   "engines": {
     "node": ">=18"
