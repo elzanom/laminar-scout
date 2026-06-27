@@ -1,4 +1,4 @@
-import { fetchMeteoraDiscovery, fetchMeteoraPoolMeta } from './metrics-fetcher.js';
+import { fetchMeteoraDiscovery, fetchMeteoraPoolMeta, enrichPoolsWithDetails } from './metrics-fetcher.js';
 import { fetchJupiterPrices } from './metrics-fetcher.js';
 import { scoreCandidate, degenScore, compositeScore } from './pool-scorer.js';
 import { getScreeningDefaultsForTimeframe, normalizeTimeframe } from './screening-scales.js';
@@ -100,7 +100,7 @@ function buildFilterBy(screening, excludeLaunchpads = [], includeLaunchpads = []
   return parts.join(',');
 }
 
-export async function discoverPools({ pageSize = 50, timeframe = '4h', includeLaunchpads = [], excludeLaunchpads = [], extraFilterBy = '' } = {}) {
+export async function discoverPools({ pageSize = 50, timeframe = '4h', includeLaunchpads = [], excludeLaunchpads = [], extraFilterBy = '', enrich = true, concurrency = 10 } = {}) {
   const cfg = getConfig();
   const tf = normalizeTimeframe(timeframe);
   const screening = cfg.poolScreening;
@@ -111,7 +111,8 @@ export async function discoverPools({ pageSize = 50, timeframe = '4h', includeLa
   };
   const filterBy = [buildFilterBy(merged, excludeLaunchpads, includeLaunchpads), extraFilterBy].filter(Boolean).join(',');
   const result = await fetchMeteoraDiscovery({ pageSize, filterBy, timeframe: tf });
-  return { ...result, timeframe: tf, filterBy, condensed: result.data.map(condensePool).filter(Boolean) };
+  const enriched = enrich ? await enrichPoolsWithDetails(result.data, { concurrency }) : result.data;
+  return { ...result, data: enriched, timeframe: tf, filterBy, condensed: enriched.map(condensePool).filter(Boolean) };
 }
 
 export function getRawPoolScreeningRejectReason(pool, screening) {
@@ -120,7 +121,8 @@ export function getRawPoolScreeningRejectReason(pool, screening) {
   const activeTvl = num(pool.active_tvl ?? pool.tvl);
   if (activeTvl < PVP_CONSTANTS.MIN_ACTIVE_TVL) return `active_tvl<${PVP_CONSTANTS.MIN_ACTIVE_TVL}`;
   if (num(pool.holders) < PVP_CONSTANTS.MIN_HOLDERS) return `holders<${PVP_CONSTANTS.MIN_HOLDERS}`;
-  if (num(pool.unique_lps) < 5) return 'unique_lps<5';
+  const uniqueLps = num(pool.unique_lps);
+  if (uniqueLps > 0 && uniqueLps < 5) return 'unique_lps<5';
 
   if (Number.isFinite(s.minTvl) && activeTvl < s.minTvl) return `tvl<${s.minTvl}`;
   if (Number.isFinite(s.maxTvl) && activeTvl > s.maxTvl) return `tvl>${s.maxTvl}`;

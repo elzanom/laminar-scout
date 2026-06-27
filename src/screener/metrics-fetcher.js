@@ -3,7 +3,7 @@ import { log } from '../utils/logger.js';
 import { recordSuccess, recordError, incrCounter } from '../utils/health.js';
 import { KNOWN_MINTS } from '../constants.js';
 
-const METEORA_POOL_DISCOVERY = 'https://pool-discovery-api.datapi.meteora.ag/pools';
+const METEORA_POOL_DISCOVERY = 'https://dlmm.datapi.meteora.ag/pools';
 const METEORA_DLMM_POOLS = 'https://dlmm.datapi.meteora.ag/pools';
 const JUPITER_ASSETS = 'https://datapi.jup.ag/v1/assets/search';
 
@@ -37,17 +37,21 @@ export async function fetchMeteoraDiscovery({ pageSize = 50, filterBy = '', time
   if (cached) return cached;
 
   const q = new URLSearchParams();
-  q.set('page_size', String(pageSize));
-  if (filterBy) q.set('filter_by', filterBy);
-  if (timeframe) q.set('timeframe', timeframe);
+  q.set('page_size', String(Math.min(Math.max(Number(pageSize) || 50, 1), 100)));
+  q.set('page', '1');
   const url = `${METEORA_POOL_DISCOVERY}?${q.toString()}`;
 
   try {
     const data = await fetchJson(url, {}, {}, 'meteora-discovery');
-    const result = { data: Array.isArray(data?.data) ? data.data : [], total: data?.total ?? (data?.data?.length || 0) };
+    const rawData = Array.isArray(data?.data) ? data.data : [];
+    const mapped = rawData.map((p) => ({
+      ...p,
+      pool_address: p.pool_address || p.address,
+    }));
+    const result = { data: mapped, total: data?.total ?? mapped.length };
     setCached(discoveryCache, cacheKey, result);
-    incrCounter('metrics.discovery.hit', result.data.length);
-    recordSuccess('metrics.discovery', { count: result.data.length, timeframe });
+    incrCounter('metrics.discovery.hit', mapped.length);
+    recordSuccess('metrics.discovery', { count: mapped.length, timeframe });
     return result;
   } catch (err) {
     recordError('metrics.discovery', err);
@@ -55,21 +59,75 @@ export async function fetchMeteoraDiscovery({ pageSize = 50, filterBy = '', time
   }
 }
 
-export async function fetchMeteoraPoolMeta(poolAddress) {
+export async function fetchMeteoraPoolDetail(poolAddress) {
   if (!poolAddress) return null;
-  const cached = getCached(poolMetaCache, poolAddress, DEFAULT_TTL_POOL_META_MS);
+  const cached = getCached(poolMetaCache, `detail:${poolAddress}`, DEFAULT_TTL_POOL_META_MS);
   if (cached) return cached;
   const url = `${METEORA_DLMM_POOLS}/${poolAddress}`;
   try {
-    const data = await fetchJson(url, {}, {}, `meteora-pool-meta:${poolAddress}`);
-    setCached(poolMetaCache, poolAddress, data);
-    recordSuccess('metrics.pool-meta', { pool: poolAddress });
-    return data;
+    const raw = await fetchJson(url, {}, {}, `meteora-pool-detail:${poolAddress}`);
+    const normalized = normalizePoolDetail(raw);
+    setCached(poolMetaCache, `detail:${poolAddress}`, normalized);
+    recordSuccess('metrics.pool-detail', { pool: poolAddress });
+    return normalized;
   } catch (err) {
-    recordError('metrics.pool-meta', err, { pool: poolAddress });
-    log('warn', `metrics-fetcher: pool-meta failed for ${poolAddress}`, { error: err.message });
+    recordError('metrics.pool-detail', err, { pool: poolAddress });
     return null;
   }
+}
+
+function normalizePoolDetail(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const cfg = raw.pool_config || {};
+  const v = raw.volume || {};
+  const f = raw.fees || {};
+  const ftr = raw.fee_tvl_ratio || {};
+  return {
+    ...raw,
+    pool_address: raw.pool_address || raw.address,
+    address: raw.address || raw.pool_address,
+    tvl: Number(raw.tvl ?? 0),
+    active_tvl: Number(raw.tvl ?? 0),
+    fee: Number(f['4h'] ?? f['1h'] ?? f['24h'] ?? 0),
+    fees: Number(f['4h'] ?? f['1h'] ?? f['24h'] ?? 0),
+    volume: Number(v['4h'] ?? v['1h'] ?? v['24h'] ?? 0),
+    fee_active_tvl_ratio: Number(ftr['4h'] ?? ftr['1h'] ?? ftr['24h'] ?? 0),
+    fee_tvl_ratio: Number(ftr['4h'] ?? ftr['1h'] ?? ftr['24h'] ?? 0),
+    bin_step: Number(cfg.bin_step ?? 0),
+    fee_pct: Number(cfg.base_fee_pct ?? 0),
+    base_fee_pct: Number(cfg.base_fee_pct ?? 0),
+    apr: Number(raw.apr ?? 0),
+    apy: Number(raw.apy ?? 0),
+    pool_created_at: Number(raw.created_at ?? 0),
+    created_at: Number(raw.created_at ?? 0),
+    launchpad: raw.launchpad || '',
+    is_blacklisted: !!raw.is_blacklisted,
+    dlmm_params: cfg.bin_step != null ? { bin_step: cfg.bin_step } : undefined,
+  };
+}
+
+export async function enrichPoolsWithDetails(pools, { concurrency = 10 } = {}) {
+  if (!Array.isArray(pools) || !pools.length) return pools;
+  const out = new Array(pools.length);
+  let cursor = 0;
+  async function worker() {
+    while (true) {
+      const idx = cursor++;
+      if (idx >= pools.length) return;
+      const p = pools[idx];
+      const addr = p?.pool_address || p?.address;
+      if (!addr) { out[idx] = p; continue; }
+      const detail = await fetchMeteoraPoolDetail(addr);
+      out[idx] = detail ? { ...p, ...detail, _enriched: true } : { ...p, _enriched: false };
+    }
+  }
+  const workers = Array.from({ length: Math.min(concurrency, pools.length) }, () => worker());
+  await Promise.all(workers);
+  return out;
+}
+
+export async function fetchMeteoraPoolMeta(poolAddress) {
+  return fetchMeteoraPoolDetail(poolAddress);
 }
 
 export async function fetchJupiterPrices(mints, opts = {}) {
