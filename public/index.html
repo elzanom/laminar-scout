@@ -3,107 +3,244 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>METEORA LP SCREENER // laminar-scout</title>
+  <title>laminar-scout // DLMM LP screener</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <div class="scanlines"></div>
-  <div class="scan-overlay"></div>
+  <div class="bg-glow"></div>
 
-  <header class="topbar">
+  <!-- HEADER -->
+  <header class="app-header">
     <div class="brand">
-      <h1>METEORA LP SCREENER</h1>
-      <span class="subtitle">// DLMM LP CASE STUDY</span>
+      <div class="logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <path d="M4 6 L16 2 L28 6 L28 26 L16 30 L4 26 Z" stroke="url(#lg)" stroke-width="2" fill="none"/>
+          <path d="M4 6 L16 10 L28 6 M16 10 L16 30" stroke="url(#lg)" stroke-width="2" fill="none"/>
+          <circle cx="16" cy="16" r="2" fill="url(#lg)"/>
+          <defs>
+            <linearGradient id="lg" x1="0" y1="0" x2="32" y2="32">
+              <stop offset="0%" stop-color="#7c5cff"/>
+              <stop offset="50%" stop-color="#4fd5ff"/>
+              <stop offset="100%" stop-color="#5aff9c"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div>
+          <h1>laminar-scout</h1>
+          <span class="tagline">Meteora DLMM LP screener &amp; dataset builder</span>
+        </div>
+      </div>
     </div>
-    <div class="meta">
-      <span class="meta-item"><span class="label">Latest scan:</span> <span id="meta-latest-scan" class="val">--</span></span>
-      <span class="meta-item"><span class="label">Pools scanned:</span> <span id="meta-pools" class="val">--</span></span>
-      <span class="meta-item"><span class="label">Wallets:</span> <span id="meta-wallets" class="val">--</span></span>
-      <span class="meta-item"><span class="label">LIST</span> - <span id="meta-status" class="val">--</span></span>
+    <div class="header-meta">
+      <div class="live-indicator">
+        <span class="live-dot"></span>
+        <span class="live-label">LIVE</span>
+      </div>
+      <div class="meta-block">
+        <span class="meta-label">last poll</span>
+        <span class="meta-value" id="last-poll">--</span>
+      </div>
+      <div class="meta-block">
+        <span class="meta-label">uptime</span>
+        <span class="meta-value" id="meta-uptime">--</span>
+      </div>
     </div>
   </header>
 
-  <div class="subbar">
-    <div class="counters">
-      <div class="counter"><span class="label">total</span><span id="c-wallets-total" class="val">--</span></div>
-      <div class="counter"><span class="label">top</span><span id="c-wallets-top" class="val accent-cyan">--</span></div>
-      <div class="counter"><span class="label">tracked</span><span id="c-wallets-tracked" class="val accent-blue">--</span></div>
-      <div class="counter"><span class="label">candidates</span><span id="c-wallets-candidate" class="val muted">--</span></div>
-      <div class="counter"><span class="label">rejected</span><span id="c-wallets-rejected" class="val accent-red">--</span></div>
-      <div class="counter"><span class="label">signals</span><span id="c-signals-total" class="val">--</span></div>
-      <div class="counter"><span class="label">positions</span><span id="c-positions-total" class="val">--</span></div>
-      <div class="counter"><span class="label">training</span><span id="c-training-total" class="val">--</span></div>
+  <!-- STAT CARDS -->
+  <section class="stats-grid">
+    <div class="stat-card stat-wallets">
+      <div class="stat-header">
+        <span class="stat-label">Wallets</span>
+        <span class="stat-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-7l-2-2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>
+        </span>
+      </div>
+      <div class="stat-value" id="c-wallets-total">--</div>
+      <div class="stat-breakdown">
+        <div class="bd-item bd-top"><span class="bd-dot"></span>top <span id="c-wallets-top" class="bd-val">--</span></div>
+        <div class="bd-item bd-tracked"><span class="bd-dot"></span>tracked <span id="c-wallets-tracked" class="bd-val">--</span></div>
+        <div class="bd-item bd-cand"><span class="bd-dot"></span>candidates <span id="c-wallets-candidate" class="bd-val">--</span></div>
+        <div class="bd-item bd-rej"><span class="bd-dot"></span>rejected <span id="c-wallets-rejected" class="bd-val">--</span></div>
+      </div>
     </div>
-    <div class="controls">
-      <select id="filter-status" class="ctl">
-        <option value="top,tracked">status: top + tracked</option>
-        <option value="top">status: top only</option>
-        <option value="tracked">status: tracked</option>
-        <option value="candidate">status: candidate</option>
-      </select>
-      <select id="order-by" class="ctl">
-        <option value="score">order: score</option>
-        <option value="wr">order: win rate</option>
-        <option value="pnl">order: pnl</option>
-      </select>
-      <span class="poll-info">poll <span id="last-poll">--</span></span>
-    </div>
-  </div>
 
-  <main class="table-wrap">
-    <table class="data-table" id="table-wallets">
-      <thead>
-        <tr>
-          <th class="num-col">#</th>
-          <th class="wallet-col">wallet</th>
-          <th class="num-col">score</th>
-          <th class="num-col">wr%</th>
-          <th class="num-col">pnl usd</th>
-          <th class="num-col">fee $</th>
-          <th class="num-col">fee yield</th>
-          <th class="num-col">pools</th>
-          <th class="num-col">w/l</th>
-          <th class="num-col">open</th>
-          <th class="num-col">avg bin</th>
-          <th class="strategy-col">strategy</th>
-        </tr>
-      </thead>
-      <tbody><tr><td colspan="12" class="muted center">loading…</td></tr></tbody>
-    </table>
-  </main>
+    <div class="stat-card stat-positions">
+      <div class="stat-header">
+        <span class="stat-label">Positions</span>
+        <span class="stat-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </span>
+      </div>
+      <div class="stat-value" id="c-positions-total">--</div>
+      <div class="stat-sub">
+        <span><span id="c-positions-open" class="sub-val">--</span> open</span>
+        <span class="dot-sep">·</span>
+        <span><span id="c-positions-closed" class="sub-val">--</span> closed</span>
+      </div>
+    </div>
 
-  <section class="grid-panels">
-    <div class="panel">
-      <div class="panel-header">recent signals</div>
-      <table class="data-table compact" id="table-signals">
-        <thead><tr><th>time</th><th>pair</th><th>trigger</th><th class="num">conf</th><th>status</th></tr></thead>
-        <tbody><tr><td colspan="5" class="muted center">no signals yet</td></tr></tbody>
-      </table>
+    <div class="stat-card stat-signals">
+      <div class="stat-header">
+        <span class="stat-label">Signals</span>
+        <span class="stat-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h6l2-9 4 18 2-9h6"/></svg>
+        </span>
+      </div>
+      <div class="stat-value" id="c-signals-total">--</div>
+      <div class="stat-sub">
+        <span><span id="c-signals-sent" class="sub-val">--</span> sent</span>
+        <span class="dot-sep">·</span>
+        <span><span id="c-signals-pending" class="sub-val">--</span> pending</span>
+      </div>
     </div>
-    <div class="panel">
-      <div class="panel-header">dataset feature coverage (for Laminar)</div>
-      <div id="coverage-bars" class="chart-bars"></div>
-      <div id="coverage-meta" class="muted" style="margin-top:8px;font-size:11px"></div>
+
+    <div class="stat-card stat-dataset">
+      <div class="stat-header">
+        <span class="stat-label">Training records</span>
+        <span class="stat-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </span>
+      </div>
+      <div class="stat-value" id="c-training-total">--</div>
+      <div class="stat-sub">
+        <span><span id="c-training-exported" class="sub-val">--</span> exported</span>
+        <span class="dot-sep">·</span>
+        <span><span id="c-training-rate" class="sub-val">--</span> profit rate</span>
+      </div>
     </div>
-    <div class="panel">
-      <div class="panel-header">recent closed positions</div>
-      <table class="data-table compact" id="table-positions">
-        <thead><tr><th>wallet</th><th>pair</th><th class="num">pnl</th><th class="num">fees</th><th class="num">hours</th><th>result</th></tr></thead>
-        <tbody><tr><td colspan="6" class="muted center">no closed positions yet</td></tr></tbody>
-      </table>
+  </section>
+
+  <!-- TOOLBAR -->
+  <section class="toolbar">
+    <div class="toolbar-left">
+      <h2 class="section-title">Top LP Wallets</h2>
+      <span class="section-sub" id="toolbar-meta">-- wallets</span>
     </div>
-    <div class="panel">
-      <div class="panel-header">discovery sources</div>
-      <div id="chart-sources" class="chart-bars"></div>
+    <div class="toolbar-right">
+      <div class="ctl-group">
+        <label>status</label>
+        <select id="filter-status" class="ctl">
+          <option value="top,tracked">top + tracked</option>
+          <option value="top">top only</option>
+          <option value="tracked">tracked</option>
+          <option value="candidate">candidates</option>
+        </select>
+      </div>
+      <div class="ctl-group">
+        <label>order</label>
+        <select id="order-by" class="ctl">
+          <option value="score">score</option>
+          <option value="wr">win rate</option>
+          <option value="pnl">PnL</option>
+        </select>
+      </div>
     </div>
-    <div class="panel">
-      <div class="panel-header">subsystem health</div>
-      <table class="data-table compact" id="table-health">
-        <thead><tr><th>subsystem</th><th>last success</th><th>last error</th><th class="num">errs</th><th>state</th></tr></thead>
-        <tbody><tr><td colspan="5" class="muted center">no data yet</td></tr></tbody>
+  </section>
+
+  <!-- WALLETS TABLE -->
+  <section class="card">
+    <div class="card-header">
+      <span class="card-title">wallet leaderboard</span>
+      <span class="card-meta">sorted by composite score</span>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table" id="table-wallets">
+        <thead>
+          <tr>
+            <th class="num-col">#</th>
+            <th class="wallet-col">wallet</th>
+            <th class="num-col">score</th>
+            <th class="num-col">wr%</th>
+            <th class="num-col">pnl</th>
+            <th class="num-col">fees</th>
+            <th class="num-col">fee yield</th>
+            <th class="num-col">pools</th>
+            <th class="num-col">w / l</th>
+            <th class="num-col">open</th>
+            <th class="num-col">avg bin</th>
+            <th class="strategy-col">strategy</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="12" class="empty-row">loading…</td></tr></tbody>
       </table>
     </div>
   </section>
+
+  <!-- SECONDARY PANELS -->
+  <section class="panel-grid">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">recent signals</span>
+        <span class="card-meta">when top wallet enters screened pool</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table compact" id="table-signals">
+          <thead><tr><th>time</th><th>pair</th><th>trigger</th><th class="num">conf</th><th>status</th></tr></thead>
+          <tbody><tr><td colspan="5" class="empty-row">no signals yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">recent closed positions</span>
+        <span class="card-meta">last few wallet exits</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table compact" id="table-positions">
+          <thead><tr><th>wallet</th><th>pair</th><th class="num">pnl</th><th class="num">fees</th><th class="num">hours</th><th>result</th></tr></thead>
+          <tbody><tr><td colspan="6" class="empty-row">no closed positions yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">dataset feature coverage</span>
+        <span class="card-meta" id="coverage-meta">fields populated in training_records</span>
+      </div>
+      <div id="coverage-bars" class="coverage-bars"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">score distribution</span>
+        <span class="card-meta">wallet composite score buckets</span>
+      </div>
+      <div id="score-distribution" class="dist-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">discovery sources</span>
+        <span class="card-meta">how wallets are discovered</span>
+      </div>
+      <div id="chart-sources" class="sources-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">subsystem health</span>
+        <span class="card-meta">live data ingestion state</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table compact" id="table-health">
+          <thead><tr><th>subsystem</th><th>last success</th><th>last error</th><th class="num">errs</th><th>state</th></tr></thead>
+          <tbody><tr><td colspan="5" class="empty-row">no data yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+  <footer class="app-footer">
+    <span>laminar-scout v1.0 · self-discovering DLMM LP pipeline · read-only data feed for Laminar</span>
+  </footer>
 
   <script src="/app.js"></script>
 </body>
