@@ -5,8 +5,8 @@
   "poolDiscoveryEnabled": true,
   "txMiningEnabled": false,
   "followWinnersEnabled": false,
-  "maxWalletCandidatesPerCycle": 100,
-  "minPositionsToEvaluate": 10,
+  "maxWalletCandidatesPerCycle": 300,
+  "minPositionsToEvaluate": 3,
   "evaluationBackfillDays": 14,
   "reEvaluateIntervalHours": 168,
 
