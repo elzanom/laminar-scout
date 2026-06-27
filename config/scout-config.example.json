@@ -7,7 +7,7 @@
   "followWinnersEnabled": true,
   "maxWalletCandidatesPerCycle": 100,
   "minPositionsToEvaluate": 10,
-  "evaluationBackfillDays": 90,
+  "evaluationBackfillDays": 14,
   "reEvaluateIntervalHours": 168,
 
   "// Wallet Tier Thresholds": "",
@@ -41,7 +41,7 @@
   "signalDedupWindowMinutes": 15,
 
   "// Collection": "",
-  "backfillDays": 90,
+  "backfillDays": 14,
   "snapshotIntervalMinutes": 15,
   "walletRankUpdateIntervalMinutes": 60,
   "screeningIntervalMinutes": 30,
