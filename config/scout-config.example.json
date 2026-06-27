@@ -1,7 +1,7 @@
 {
   "// Wallet Discovery": "",
   "discoveryEnabled": true,
-  "discoveryIntervalMinutes": 60,
+  "discoveryIntervalMinutes": 15,
   "poolDiscoveryEnabled": true,
   "txMiningEnabled": true,
   "followWinnersEnabled": true,
