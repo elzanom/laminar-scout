@@ -7,6 +7,7 @@ import { recordSuccess, recordError, incrCounter } from '../utils/health.js';
 import { getConfig } from '../config/config.js';
 import { listSignals } from '../db/signals.js';
 import { listOpenPositions } from '../db/positions.js';
+import { KNOWN_MINTS } from '../constants.js';
 
 export const PVP_CONSTANTS = {
   PVP_SHORTLIST_LIMIT: 2,
@@ -123,6 +124,14 @@ export function getRawPoolScreeningRejectReason(pool, screening) {
   if (num(pool.holders) < PVP_CONSTANTS.MIN_HOLDERS) return `holders<${PVP_CONSTANTS.MIN_HOLDERS}`;
   const uniqueLps = num(pool.unique_lps);
   if (uniqueLps > 0 && uniqueLps < 5) return 'unique_lps<5';
+
+  if (s.onlySolPairs) {
+    const baseMint = pool.base?.mint || pool.base_mint || pool.tokenXMint;
+    const quoteMint = pool.quote?.mint || pool.quote_mint || pool.tokenYMint;
+    if (baseMint !== KNOWN_MINTS.WSOL && quoteMint !== KNOWN_MINTS.WSOL) {
+      return 'not_sol_pair';
+    }
+  }
 
   if (Number.isFinite(s.minTvl) && activeTvl < s.minTvl) return `tvl<${s.minTvl}`;
   if (Number.isFinite(s.maxTvl) && activeTvl > s.maxTvl) return `tvl>${s.maxTvl}`;

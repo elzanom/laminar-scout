@@ -123,6 +123,7 @@ function buildConfig() {
     },
 
     poolScreening: {
+      onlySolPairs: bool(fileCfg.onlySolPairs, true),
       minFeeActiveTvlRatio: num(fileCfg.minFeeActiveTvlRatio, 0.05),
       minTvl: num(fileCfg.minTvl, 10_000),
       maxTvl: num(fileCfg.maxTvl, 150_000),
