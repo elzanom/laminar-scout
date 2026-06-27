@@ -1,4 +1,4 @@
-import { fetchMeteoraDiscovery, fetchMeteoraPoolMeta, enrichPoolsWithDetails } from './metrics-fetcher.js';
+import { fetchMeteoraDiscovery, fetchMeteoraDiscoveryMultiPage, fetchMeteoraPoolMeta, enrichPoolsWithDetails } from './metrics-fetcher.js';
 import { fetchJupiterPrices } from './metrics-fetcher.js';
 import { scoreCandidate, degenScore, compositeScore } from './pool-scorer.js';
 import { getScreeningDefaultsForTimeframe, normalizeTimeframe } from './screening-scales.js';
@@ -100,7 +100,7 @@ function buildFilterBy(screening, excludeLaunchpads = [], includeLaunchpads = []
   return parts.join(',');
 }
 
-export async function discoverPools({ pageSize = 50, timeframe = '4h', includeLaunchpads = [], excludeLaunchpads = [], extraFilterBy = '', enrich = true, concurrency = 10 } = {}) {
+export async function discoverPools({ pageSize = 100, pages = 3, timeframe = '4h', includeLaunchpads = [], excludeLaunchpads = [], extraFilterBy = '', enrich = true, concurrency = 10 } = {}) {
   const cfg = getConfig();
   const tf = normalizeTimeframe(timeframe);
   const screening = cfg.poolScreening;
@@ -110,7 +110,7 @@ export async function discoverPools({ pageSize = 50, timeframe = '4h', includeLa
     timeframe: tf,
   };
   const filterBy = [buildFilterBy(merged, excludeLaunchpads, includeLaunchpads), extraFilterBy].filter(Boolean).join(',');
-  const result = await fetchMeteoraDiscovery({ pageSize, filterBy, timeframe: tf });
+  const result = await fetchMeteoraDiscoveryMultiPage({ pageSize, totalPages: pages, filterBy, timeframe: tf });
   const enriched = enrich ? await enrichPoolsWithDetails(result.data, { concurrency }) : result.data;
   return { ...result, data: enriched, timeframe: tf, filterBy, condensed: enriched.map(condensePool).filter(Boolean) };
 }

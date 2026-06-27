@@ -31,14 +31,14 @@ function setCached(map, key, value) {
   map.set(key, { value, fetchedAt: now() });
 }
 
-export async function fetchMeteoraDiscovery({ pageSize = 50, filterBy = '', timeframe = '4h' } = {}) {
-  const cacheKey = JSON.stringify({ pageSize, filterBy, timeframe });
+export async function fetchMeteoraDiscovery({ pageSize = 50, filterBy = '', timeframe = '4h', page = 1 } = {}) {
+  const cacheKey = JSON.stringify({ pageSize, filterBy, timeframe, page });
   const cached = getCached(discoveryCache, cacheKey, DEFAULT_TTL_DISCOVERY_MS);
   if (cached) return cached;
 
   const q = new URLSearchParams();
   q.set('page_size', String(Math.min(Math.max(Number(pageSize) || 50, 1), 100)));
-  q.set('page', '1');
+  q.set('page', String(Math.max(1, Number(page) || 1)));
   const url = `${METEORA_POOL_DISCOVERY}?${q.toString()}`;
 
   try {
@@ -48,15 +48,33 @@ export async function fetchMeteoraDiscovery({ pageSize = 50, filterBy = '', time
       ...p,
       pool_address: p.pool_address || p.address,
     }));
-    const result = { data: mapped, total: data?.total ?? mapped.length };
+    const result = { data: mapped, total: data?.total ?? mapped.length, page: Number(page) };
     setCached(discoveryCache, cacheKey, result);
     incrCounter('metrics.discovery.hit', mapped.length);
-    recordSuccess('metrics.discovery', { count: mapped.length, timeframe });
+    recordSuccess('metrics.discovery', { count: mapped.length, timeframe, page });
     return result;
   } catch (err) {
     recordError('metrics.discovery', err);
     throw err;
   }
+}
+
+export async function fetchMeteoraDiscoveryMultiPage({ pageSize = 100, totalPages = 3, filterBy = '', timeframe = '4h' } = {}) {
+  const pages = [];
+  for (let p = 1; p <= Math.max(1, totalPages); p++) {
+    pages.push(fetchMeteoraDiscovery({ pageSize, filterBy, timeframe, page: p }).catch(() => ({ data: [], page: p })));
+  }
+  const results = await Promise.all(pages);
+  const merged = results.flatMap((r) => r.data || []);
+  const seen = new Set();
+  const dedup = [];
+  for (const p of merged) {
+    const addr = p.pool_address || p.address;
+    if (!addr || seen.has(addr)) continue;
+    seen.add(addr);
+    dedup.push(p);
+  }
+  return { data: dedup, total: dedup.length, pages: totalPages };
 }
 
 export async function fetchMeteoraPoolDetail(poolAddress) {
