@@ -31,6 +31,7 @@ import {
 } from './collector/helius-stream.js';
 import { startTxMining } from './discovery/tx-mining.js';
 import { onTxEvent, TX_EVENT_TYPES } from './collector/event-bus.js';
+import * as telegram from './notifier/telegram.js';
 
 function banner() {
   const cfg = getConfig();
@@ -285,6 +286,10 @@ async function main() {
 
   await startWebhook();
   startPolling();
+
+  if (cfg.telegram?.enabled !== false) {
+    telegram.startPolling();
+  }
 
   log('info', 'laminar-scout: running');
 }

@@ -171,6 +171,16 @@ function buildConfig() {
       apiKey: fileCfg.agentMeridianApiKey || 'bWVyaWRpYW4taXMtdGhlLWJlc3QtYWdlbnRz',
       enabled: bool(fileCfg.agentMeridianEnabled, false),
     },
+
+    telegram: {
+      botToken: process.env.TELEGRAM_BOT_TOKEN || fileCfg.telegramBotToken || '',
+      chatId: process.env.TELEGRAM_CHAT_ID || fileCfg.telegramChatId || '',
+      allowedUserIds: process.env.TELEGRAM_ALLOWED_USER_IDS || fileCfg.telegramAllowedUserIds || '',
+      notifyOnSignal: bool(fileCfg.telegramNotifyOnSignal, true),
+      notifyOnPromote: bool(fileCfg.telegramNotifyOnPromote, false),
+      persistChatId: bool(fileCfg.telegramPersistChatId, true),
+      enabled: bool(process.env.TELEGRAM_ENABLED, fileCfg.telegramEnabled !== false),
+    },
   };
 
   if (cfg.runtime.dryRun === false) {

@@ -62,6 +62,36 @@ First signal typically fires within an hour if any `top` wallet opens a position
 
 ---
 
+## Telegram notifications (optional)
+
+Scout can send real-time signal notifications and respond to status commands via Telegram. Disabled by default.
+
+**Setup**:
+1. Create a bot via [@BotFather](https://t.me/BotFather), copy the token
+2. Add to `.env`:
+   ```
+   TELEGRAM_BOT_TOKEN=123456789:ABC...xyz
+   TELEGRAM_ENABLED=true
+   ```
+3. Start the bot: `/start` in your private chat with the bot. The chat_id is auto-saved to `config/scout-config.json` on first message.
+4. For group chats, set `TELEGRAM_ALLOWED_USER_IDS=111,222,333` to a comma-separated list of authorized sender user IDs.
+
+**Outbound notifications** (auto-sent when signal is emitted):
+- `🚨 Signal · NN% confidence` with pair, pool, trigger wallet
+- `⭐ Wallet TOP` / `👀 Wallet TRACKED` (if `telegramNotifyOnPromote=true`)
+
+**Inbound commands**:
+| Command | Action |
+|---------|--------|
+| `/status` | wallet/positions/signals/training-record counts |
+| `/top [N]` | top N wallets by composite score (default 5) |
+| `/signals [N]` | last N signals (default 5) |
+| `/help` | show this list |
+
+**Disable**: set `TELEGRAM_ENABLED=false` in `.env` or `telegramEnabled: false` in `scout-config.json`.
+
+---
+
 ## Architecture
 
 ```
@@ -132,6 +162,10 @@ First signal typically fires within an hour if any `top` wallet opens a position
 | `LOG_LEVEL` | no | info | `debug`, `info`, `warn`, `error` |
 | `DRY_RUN` | no | true | scout is read-only so this is just a flag |
 | `BIRDEYE_API_KEY` | no | - | Optional, for token price/volume fallback |
+| `TELEGRAM_BOT_TOKEN` | no | - | Optional. Bot token from @BotFather. When set + chatId registered, scout sends signal notifications and responds to `/status`, `/top`, `/signals` |
+| `TELEGRAM_CHAT_ID` | no | - | Optional. Auto-registered on first `/start` if `telegramPersistChatId=true` |
+| `TELEGRAM_ALLOWED_USER_IDS` | no | - | Optional. Comma-separated user IDs allowed to issue commands (group chats) |
+| `TELEGRAM_ENABLED` | no | true | Set `false` to disable telegram entirely |
 | `DATA_DIR` | no | `./data` | SQLite directory |
 | `LOG_DIR` | no | `./logs` | Daily log file directory |
 

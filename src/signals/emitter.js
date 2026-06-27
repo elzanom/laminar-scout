@@ -4,6 +4,7 @@ import * as signalsDb from '../db/signals.js';
 import { getConfig } from '../config/config.js';
 import { log } from '../utils/logger.js';
 import { recordSuccess, recordError, incrCounter } from '../utils/health.js';
+import * as telegram from '../notifier/telegram.js';
 
 function _nowSec() { return Math.floor(Date.now() / 1000); }
 
@@ -146,6 +147,13 @@ export async function emitSignal(validatedSignal, opts = {}) {
 
   recordSuccess('emitter', { signalId, pool: sig.pool_address, outputMode, apiOk });
   incrCounter('emitter.emitted');
+
+  if (cfg.telegram?.enabled && cfg.telegram?.notifyOnSignal !== false && telegram.isEnabled()) {
+    telegram.notifySignal(payload).catch((err) => {
+      log('warn', 'emitter: telegram notify failed', { error: err.message });
+    });
+  }
+
   return { ok: true, signal_id: signalId, payload, output_mode: outputMode, api_ok: apiOk };
 }
 

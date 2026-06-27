@@ -62,6 +62,15 @@
   "seedWalletsFile": "",
   "seedWalletsOnStartup": false,
 
+  "// Telegram notifications (optional)": "",
+  "telegramBotToken": "",
+  "telegramChatId": "",
+  "telegramAllowedUserIds": "",
+  "telegramNotifyOnSignal": true,
+  "telegramNotifyOnPromote": false,
+  "telegramPersistChatId": true,
+  "telegramEnabled": false,
+
   "// Health & observability (improvement #7)": "",
   "healthHeartbeatMinutes": 60,
   "healthStallWarnMinutes": 180,
