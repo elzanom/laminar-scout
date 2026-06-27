@@ -128,7 +128,7 @@ function printReport(r) {
     const pct = parseFloat(info.pct);
     const barShown = pct >= 95 ? '✓' : pct >= 50 ? '~' : pct > 0 ? '!' : '×';
     const examples = (info.avg != null) ? `(avg=${fmtNum(info.avg)}, range=${fmtNum(info.min)}…${fmtNum(info.max)})` : '';
-    console.log(`  ${barShown} ${name.padEnd(40)} ${String(info.count).padStart(5)}/${r.total}  (${info.pct.padStart(5)}%) ${bar(pct, 25)} ${examples}`);
+    console.log(`  ${barShown} ${name.padEnd(40)} ${String(info.count).padStart(5)}/${r.total}  (${String(info.pct).padStart(5)}%) ${bar(pct, 25)} ${examples}`);
   }
   console.log();
   console.log('Legend: ✓ >=95%   ~ >=50%   ! >0%   × null');

@@ -310,7 +310,7 @@ export function createApp() {
 let server = null;
 
 export function startDashboard(opts = {}) {
-  const port = opts.port || Number(process.env.DASHBOARD_PORT || 3002);
+  const port = opts.port || Number(process.env.DASHBOARD_PORT || 1603);
   openDb();
   const app = createApp();
   server = app.listen(port, () => {

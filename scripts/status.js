@@ -69,7 +69,7 @@ async function main() {
     console.log('  ✓ all online');
     console.log('');
     console.log('  access:');
-    console.log('    dashboard      http://localhost:3002');
+    console.log('    dashboard      http://localhost:1603');
     console.log('    webhook        POST http://localhost:3001/webhook/helius');
   } else {
     const bad = described.filter((p) => p.status !== 'online');

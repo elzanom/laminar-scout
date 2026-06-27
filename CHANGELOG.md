@@ -29,7 +29,7 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/), 
 - `scripts/start.js` / `stop.js` / `scripts/status.js` — PM2 lifecycle: start all processes, graceful stop, status table with color coding.
 
 ### Added — Dashboard
-- `src/dashboard/server.js` — Express-based dashboard server (port 3002) with 11 REST endpoints (`/api/overview`, `/api/wallets/top`, `/api/signals/recent`, `/api/positions/recent`, `/api/health`, `/api/discovery-sources`, `/api/score-distribution`, `/api/discovery-recent`, `/api/cron-status`, `/api/dataset-summary`, etc.).
+- `src/dashboard/server.js` — Express-based dashboard server (port 1603) with 11 REST endpoints (`/api/overview`, `/api/wallets/top`, `/api/signals/recent`, `/api/positions/recent`, `/api/health`, `/api/discovery-sources`, `/api/score-distribution`, `/api/discovery-recent`, `/api/cron-status`, `/api/dataset-summary`, etc.).
 - `public/index.html` + `public/app.js` + `public/style.css` — retro/terminal aesthetic matching Meteora LP Screener styling. Dark navy background with scanline overlay, JetBrains Mono typography, color-coded data quality indicators.
 - "Dataset feature coverage (for Laminar)" panel — shows 25 most important feature fields with coverage % sorted descending.
 

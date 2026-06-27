@@ -4,7 +4,7 @@ Self-discovering wallet tracker for Meteora DLMM LP wallets. Pure data pipeline 
 
 No AI/LLM. No on-chain execution. No trading. Read-only data pipeline that produces a structured training dataset for Laminar (the upstream DLMM agent).
 
-Includes a lightweight **dashboard** (Express + vanilla HTML/JS/CSS) on port 3002 for live monitoring.
+Includes a lightweight **dashboard** (Express + vanilla HTML/JS/CSS) on port 1603 for live monitoring.
 
 ---
 
@@ -16,7 +16,7 @@ Includes a lightweight **dashboard** (Express + vanilla HTML/JS/CSS) on port 300
 - **Tracks in real time** — Helius webhook (port 3001) + 30s polling fallback. Every addLiquidity/removeLiquidity/claimFee from tracked wallets is recorded.
 - **Emits signals** — when a `top` wallet opens a position in a pool that passes screening, writes a Laminar-compatible JSON to `signals-output.json`.
 - **Builds dataset** — every closed position becomes a TrainingRecord (69 columns: 8 labels, 13 pool features, 14 token features, 9 position features, 16 wallet features, 2 audit + 7 identity) for Laminar training.
-- **Dashboard** — read-only HTTP frontend on port 3002 for live inspection: wallet counts, top wallets, recent signals, recent positions, score distribution, discovery sources, subsystem health.
+- **Dashboard** — read-only HTTP frontend on port 1603 for live inspection: wallet counts, top wallets, recent signals, recent positions, score distribution, discovery sources, subsystem health.
 
 ---
 
@@ -439,7 +439,7 @@ Run `node scripts/dataset-stats.js` for the live numbers, or see the dashboard "
 | `node scripts/start.js` | Start all PM2 processes (main + webhook + dashboard) via ecosystem.config.cjs |
 | `node scripts/stop.js` | Gracefully stop all laminar-scout PM2 processes (SIGTERM) |
 | `node scripts/status.js` | Show current state of all processes (status, pid, uptime, cpu, mem, restarts) |
-| `node scripts/dashboard.js --port 3002` | Start dashboard server (vanilla HTML/JS/CSS frontend) |
+| `node scripts/dashboard.js --port 1603` | Start dashboard server (vanilla HTML/JS/CSS frontend) |
 
 ### Dataset pipeline
 
@@ -492,9 +492,9 @@ npm run build-dataset # rebuild training_records from positions
 
 ## Dashboard
 
-`npm run dashboard` starts an Express-based read-only dashboard on port 3002. It reads the same SQLite DB as the scout (no separate cache), so the data is always live.
+`npm run dashboard` starts an Express-based read-only dashboard on port 1603. It reads the same SQLite DB as the scout (no separate cache), so the data is always live.
 
-**URL:** `http://localhost:3002`
+**URL:** `http://localhost:1603`
 
 **Sections**:
 - 6 overview cards (wallets, positions, signals, training, processed TXs, snapshots)

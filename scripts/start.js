@@ -118,7 +118,7 @@ async function main() {
 function printUrls() {
   console.log('');
   console.log('  access points:');
-  console.log('    dashboard      http://localhost:3002');
+  console.log('    dashboard      http://localhost:1603');
   console.log('    webhook        POST http://localhost:3001/webhook/helius');
   console.log('    logs           pm2 logs laminar-scout');
   console.log('    stop           node scripts/stop.js');

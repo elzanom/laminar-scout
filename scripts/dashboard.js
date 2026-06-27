@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Standalone dashboard process — reads scout DB and serves HTML/JS/CSS + JSON APIs.
-// Usage: node scripts/dashboard.js [--port 3002]
-// Env:   DASHBOARD_PORT (default 3002)
+// Usage: node scripts/dashboard.js [--port 1603]
+// Env:   DASHBOARD_PORT (default 1603)
 
 import { startDashboard } from '../src/dashboard/server.js';
 
@@ -10,7 +10,7 @@ function parseArgs(argv) {
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--port') args.port = Number(argv[++i]);
     else if (argv[i] === '--help' || argv[i] === '-h') {
-      console.log('Usage: node scripts/dashboard.js [--port 3002]');
+      console.log('Usage: node scripts/dashboard.js [--port 1603]');
       process.exit(0);
     }
   }
