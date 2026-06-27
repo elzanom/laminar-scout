@@ -42,7 +42,8 @@ function buildReport(db) {
   const coverageFields = [
     'token_pair','pool_bin_step',    'token_x_market_cap','token_x_holders','token_x_fdv','token_x_mcap',
     'token_x_liquidity','token_x_is_verified','token_x_created_at','token_x_organic_score',
-    'token_x_total_supply',
+    'token_x_total_supply','token_x_circ_supply',
+    'token_num_holders','token_holder_concentration','token_dev_hold_rate',
     'token_price_change_24h','token_volatility_24h','token_num_buys_5m','token_num_sells_5m',
     'token_buy_sell_ratio_5m','token_y_total_supply',
     'pool_launchpad','pool_current_price','pool_dynamic_fee_pct',

@@ -11,6 +11,7 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/), 
 - **v6 migration**: `wallet_pool_revisit_*` columns (5 fields) + `is_first_in_pool` — captures pool familiarity (how many prior positions the wallet had in the same pool, with aggregates).
 - **v7 migration**: `token_x/y_total_supply` + `token_x/y_circ_supply` columns (4 fields) — token supply from Meteora pool-meta. `circ_supply` is always NULL because Meteora pool-detail endpoint doesn't expose it (column kept in schema for future backfill).
 - **v8 migration**: `position_in_pool_count` — competition density signal (how many positions exist in the pool at this entry's timestamp).
+- **v9 migration**: GMGN-sourced token metrics — `token_num_holders` (INTEGER), `token_holder_concentration` (REAL, top-10 holders % from `gmgn-cli token holders`), `token_dev_hold_rate` (REAL, from `gmgn-cli token info`). Fills gaps that Jupiter / DexScreener / Meteora can't cover.
 
 ### Added — Backfill scripts
 - `scripts/backfill-positions.js` — populate `positions.token_pair` + `bin_step` from Meteora pool-meta (one-time).
@@ -19,6 +20,8 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/), 
 - `scripts/backfill-meteora-summary.js` — re-fetch pool-meta, update `token_x_organic_score` and `token_x_fdv` (top 100 active DLMM pools).
 - `scripts/backfill-dexscreener.js` — backfill `token_price_change_24h` + `token_x_fdv` via DexScreener free tier.
 - `scripts/backfill-jupiter.js` — backfill token metrics via Jupiter Tokens V2 + Price V3 (mcap, liquidity, organic_score, is_verified, created_at, priceChange24h, stats5m). Free tier-safe defaults with retry-with-backoff.
+- `scripts/backfill-gmgn.js` — backfill GMGN-sourced token metrics: `token_num_holders`, `token_holder_concentration`, `token_x_circ_supply` (fills Meteora NULLs), `token_x_created_at`, `token_dev_hold_rate`. Spawns `gmgn-cli` subprocess (Cloudflare-safe, IPv4 only). Defaults `--rate 2 --concurrency 1` tuned for free tier (~50 req/min).
+- `src/collector/gmgn.js` — adapter for `gmgn-cli` binary with in-memory cache (1h TTL), rate limiting, and `extractHolderMetrics` helper for top-10 concentration.
 - `scripts/backfill-pnl-all.js` — backfill `pnl_sol`, `is_out_of_range`, `fee_per_tvl_24h`, `pool_active_bin_id` from Meteora PnL API for all (wallet, pool) pairs.
 
 ### Added — Utility scripts

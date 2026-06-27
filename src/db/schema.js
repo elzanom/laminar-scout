@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 import { getConfig } from '../config/config.js';
 import { log } from '../utils/logger.js';
 
-const SCHEMA_VERSION = 8;
+const SCHEMA_VERSION = 9;
 
 const MIGRATIONS = [
   {
@@ -138,6 +138,21 @@ const MIGRATIONS = [
         }
       };
       _addCol('training_records', 'position_in_pool_count', 'INTEGER');
+    },
+  },
+  {
+    version: 9,
+    description: 'Add GMGN-sourced token metrics: holder_count + top10 concentration + dev hold rate',
+    up: (db) => {
+      const _addCol = (table, col, decl) => {
+        const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
+        if (!cols.includes(col)) {
+          db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${decl}`);
+        }
+      };
+      _addCol('training_records', 'token_num_holders', 'INTEGER');
+      _addCol('training_records', 'token_holder_concentration', 'REAL');
+      _addCol('training_records', 'token_dev_hold_rate', 'REAL');
     },
   },
 ];

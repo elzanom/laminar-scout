@@ -267,7 +267,8 @@ export function createApp() {
       // Coverage for the most important feature categories
       const fields = [
         'token_pair','pool_bin_step','token_x_market_cap','token_x_fdv','token_x_mcap','token_x_liquidity',
-        'token_x_total_supply','token_y_total_supply',
+        'token_x_total_supply','token_y_total_supply','token_x_circ_supply',
+        'token_num_holders','token_holder_concentration','token_dev_hold_rate',
         'token_x_organic_score','token_x_is_verified','token_price_change_24h','token_volatility_24h',
         'token_num_buys_5m','token_num_sells_5m','token_buy_sell_ratio_5m',
         'pool_launchpad','pool_volume_24h','fee_tvl_ratio',
