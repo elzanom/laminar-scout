@@ -4,6 +4,8 @@ import { walletSummaryForPrompt } from './wallet-summary.js';
 import { log, logAction } from '../utils/logger.js';
 import { recordSuccess, recordError, incrCounter } from '../utils/health.js';
 
+export { isLlmEnabled } from './llm.js';
+
 const CACHE_TTL_SEC = 6 * 3600;
 
 function _nowSec() { return Math.floor(Date.now() / 1000); }

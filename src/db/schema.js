@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 import { getConfig } from '../config/config.js';
 import { log } from '../utils/logger.js';
 
-const SCHEMA_VERSION = 11;
+const SCHEMA_VERSION = 12;
 
 const MIGRATIONS = [
   {
@@ -183,6 +183,21 @@ const MIGRATIONS = [
         )
       `);
       db.exec(`CREATE INDEX IF NOT EXISTS idx_insight_cache_generated ON insight_cache(generated_at)`);
+    },
+  },
+  {
+    version: 12,
+    description: 'Add IL columns to positions table (insight layer needs these for summary)',
+    up: (db) => {
+      const _addCol = (table, col, decl) => {
+        const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
+        if (!cols.includes(col)) {
+          db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${decl}`);
+        }
+      };
+      _addCol('positions', 'impermanent_loss_usd', 'REAL');
+      _addCol('positions', 'impermanent_loss_pct', 'REAL');
+      _addCol('positions', 'price_ratio_at_close', 'REAL');
     },
   },
 ];

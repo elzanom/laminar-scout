@@ -307,12 +307,18 @@ export function createApp() {
     const question = req.query.q ? String(req.query.q) : null;
     const forceRefresh = req.query.refresh === '1' || req.query.refresh === 'true';
     if (!address) return jsonError(res, 400, 'address required');
-    const r = await safeQuery(async () => getWalletInsight(address, { question, forceRefresh }));
-    if (!r.ok) {
-      const status = r.error === 'invalid_address' ? 400 : r.error === 'wallet_not_found' ? 404 : 500;
-      return jsonError(res, status, r.error);
+    let r;
+    try {
+      r = await getWalletInsight(address, { question, forceRefresh });
+    } catch (err) {
+      return jsonError(res, 500, err.message || 'insight_error');
     }
-    res.json({ ok: true, llm_enabled: isLlmEnabled(), ...r.data });
+    if (!r || !r.ok) {
+      const errCode = r?.error || 'insight_failed';
+      const status = errCode === 'invalid_address' ? 400 : errCode === 'wallet_not_found' ? 404 : 500;
+      return jsonError(res, status, errCode);
+    }
+    res.json({ ok: true, llm_enabled: isLlmEnabled(), ...r });
   });
 
   app.use(express.static(PUBLIC_DIR, { index: 'index.html', extensions: ['html'] }));
