@@ -95,7 +95,7 @@
   "// Agent Meridian API (optional enrichment, do NOT hard-depend)": "",
   "agentMeridianUrl": "https://api.agentmeridian.xyz/api",
   "agentMeridianApiKey": "bWVyaWRpYW4taXMtdGhlLWJlc3QtYWdlbnRz",
-  "agentMeridianEnabled": false,
+  "agentMeridianEnabled": true,
 
   "// Logs": "",
   "logDir": "./logs",
