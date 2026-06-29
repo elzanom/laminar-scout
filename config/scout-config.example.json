@@ -78,7 +78,10 @@
   "llmBaseUrl": "https://openrouter.ai/api/v1",
 
   "// Learning loop (auto-derived lessons + pool cooldowns)": "",
-  "learningEnabled": true,
+  "// DISABLED by default — laminar-scout is a pure data gatherer for
+  // laminar/vipera to consume. Enable only if you want scout to auto-derive
+  // its own lessons/cooldowns. Laminar/vipera handle their own evolution.
+  "learningEnabled": false,
   "learningIntervalMinutes": 60,
   "learningBatchSize": 200,
   "learningLookbackHours": 168,
