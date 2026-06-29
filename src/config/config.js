@@ -168,9 +168,15 @@ function buildConfig() {
     },
 
     agentMeridian: {
-      url: fileCfg.agentMeridianUrl || 'https://api.agentmeridian.xyz/api',
-      apiKey: fileCfg.agentMeridianApiKey || 'bWVyaWRpYW4taXMtdGhlLWJlc3QtYWdlbnRz',
-      enabled: bool(fileCfg.agentMeridianEnabled, false),
+      url: process.env.AGENT_MERIDIAN_URL
+        || fileCfg.agentMeridianUrl
+        || 'https://api.agentmeridian.xyz/api',
+      apiKey: process.env.AGENT_MERIDIAN_API_KEY
+        || fileCfg.agentMeridianApiKey
+        || 'bWVyaWRpYW4taXMtdGhlLWJlc3QtYWdlbnRz',
+      enabled: process.env.AGENT_MERIDIAN_ENABLED !== undefined
+        ? process.env.AGENT_MERIDIAN_ENABLED === 'true' || process.env.AGENT_MERIDIAN_ENABLED === '1'
+        : bool(fileCfg.agentMeridianEnabled, false),
     },
 
     telegram: {
