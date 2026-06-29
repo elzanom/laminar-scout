@@ -72,6 +72,11 @@
   "telegramPersistChatId": true,
   "telegramEnabled": false,
 
+  "// LLM insight (optional — OpenRouter-compatible)": "",
+  "llmApiKey": "",
+  "llmModel": "openrouter/auto",
+  "llmBaseUrl": "https://openrouter.ai/api/v1",
+
   "// Health & observability (improvement #7)": "",
   "healthHeartbeatMinutes": 60,
   "healthStallWarnMinutes": 180,

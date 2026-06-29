@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 import { getConfig } from '../config/config.js';
 import { log } from '../utils/logger.js';
 
-const SCHEMA_VERSION = 9;
+const SCHEMA_VERSION = 11;
 
 const MIGRATIONS = [
   {
@@ -153,6 +153,36 @@ const MIGRATIONS = [
       _addCol('training_records', 'token_num_holders', 'INTEGER');
       _addCol('training_records', 'token_holder_concentration', 'REAL');
       _addCol('training_records', 'token_dev_hold_rate', 'REAL');
+    },
+  },
+  {
+    version: 10,
+    description: 'Add impermanent loss tracking (inspired by bengbeng.fun DLMM PnL viewer): IL USD + IL pct computed at position close',
+    up: (db) => {
+      const _addCol = (table, col, decl) => {
+        const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
+        if (!cols.includes(col)) {
+          db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${decl}`);
+        }
+      };
+      _addCol('training_records', 'impermanent_loss_usd', 'REAL');
+      _addCol('training_records', 'impermanent_loss_pct', 'REAL');
+      _addCol('training_records', 'price_ratio_at_close', 'REAL');
+    },
+  },
+  {
+    version: 11,
+    description: 'Add insight_cache table for LLM-generated wallet insights (OpenRouter-compatible)',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS insight_cache (
+          address TEXT PRIMARY KEY,
+          content TEXT NOT NULL,
+          model TEXT,
+          generated_at INTEGER NOT NULL
+        )
+      `);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_insight_cache_generated ON insight_cache(generated_at)`);
     },
   },
 ];

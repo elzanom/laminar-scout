@@ -8,6 +8,7 @@ import * as signalsDb from '../db/signals.js';
 import * as marketSnapshotsDb from '../db/market-snapshots.js';
 import { log, logAction } from '../utils/logger.js';
 import { getSubsystemState, getStalledSubsystems, getCounters, emitHeartbeat } from '../utils/health.js';
+import { getWalletInsight, isLlmEnabled } from '../insight/index.js';
 import { getConfig } from '../config/config.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -299,6 +300,19 @@ export function createApp() {
       `).all(Math.min(Number(req.query.limit) || 20, 100)));
     if (!r.ok) return jsonError(res, 500, r.error);
     res.json({ ok: true, data: r.data });
+  });
+
+  app.get('/api/insight/wallet', async (req, res) => {
+    const address = String(req.query.address || '').trim();
+    const question = req.query.q ? String(req.query.q) : null;
+    const forceRefresh = req.query.refresh === '1' || req.query.refresh === 'true';
+    if (!address) return jsonError(res, 400, 'address required');
+    const r = await safeQuery(async () => getWalletInsight(address, { question, forceRefresh }));
+    if (!r.ok) {
+      const status = r.error === 'invalid_address' ? 400 : r.error === 'wallet_not_found' ? 404 : 500;
+      return jsonError(res, status, r.error);
+    }
+    res.json({ ok: true, llm_enabled: isLlmEnabled(), ...r.data });
   });
 
   app.use(express.static(PUBLIC_DIR, { index: 'index.html', extensions: ['html'] }));

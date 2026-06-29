@@ -265,10 +265,35 @@ function _handleHelp() {
     `/status — wallet/positions/signals/training count\n` +
     `/top [N] — top N wallets (default 5)\n` +
     `/signals [N] — recent N signals (default 5)\n` +
+    `/ask <wallet> — LLM-powered insight for a wallet\n` +
     `/help — show this message\n` +
     `\n` +
-    `<i>Bot aktif saat TELEGRAM_BOT_TOKEN + chat ID di-set.</i>`;
+    `<i>Bot aktif saat TELEGRAM_BOT_TOKEN + chat ID di-set.\n` +
+    `LLM insight butuh OPENROUTER_API_KEY di .env.</i>`;
   return sendMessage(msg);
+}
+
+async function _handleAsk(args) {
+  const trimmed = String(args || '').trim();
+  if (!trimmed) {
+    return sendMessage('Usage: /ask <wallet_address>');
+  }
+  const addr = trimmed.split(/\s+/)[0];
+  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr)) {
+    return sendMessage('Invalid Solana address.');
+  }
+  const { getWalletInsight, isLlmEnabled } = await import('../insight/index.js');
+  const waiting = await sendMessage(`🧠 Generating insight for ${addr.slice(0, 6)}…${addr.slice(-4)}…`);
+  const result = await getWalletInsight(addr);
+  if (!result.ok) {
+    return sendMessage(`⚠️ insight failed: ${result.error}`);
+  }
+  const text = result.content.length > 3800
+    ? result.content.slice(0, 3800) + '\n\n[…truncated, full insight via dashboard /api/insight/wallet]'
+    : result.content;
+  const tag = result.fallback ? '\n\n<i>(template insight — set OPENROUTER_API_KEY for LLM)</i>'
+    : (result.cached ? '\n\n<i>(cached)</i>' : '');
+  return sendMessage(`🧠 <b>Insight · ${addr.slice(0, 6)}…${addr.slice(-4)}</b>${tag}\n\n${text}`);
 }
 
 async function _handleMessage(msg) {
@@ -295,6 +320,9 @@ async function _handleMessage(msg) {
       break;
     case '/signals':
       await _handleSignals(arg || 5);
+      break;
+    case '/ask':
+      await _handleAsk(parts.slice(1).join(' '));
       break;
     default:
       await sendMessage(`Unknown command: ${cmd}\nKetik /help untuk daftar command.`);

@@ -18,6 +18,7 @@ export function insertTrainingRecord(rec) {
       token_x_symbol, token_x_market_cap, token_x_fdv, token_x_holders, token_x_organic_score,
       token_x_is_verified, token_x_freeze_disabled, token_x_total_supply, token_x_circ_supply,
       token_x_mcap, token_x_liquidity, token_x_created_at,
+      token_num_holders, token_holder_concentration, token_dev_hold_rate,
       token_y_symbol, token_y_is_sol, token_y_total_supply, token_y_circ_supply,
       token_volatility_24h, token_price_change_24h, volume_vs_7d_avg,
       token_num_buys_5m, token_num_sells_5m, token_buy_sell_ratio_5m,
@@ -33,11 +34,12 @@ export function insertTrainingRecord(rec) {
       wallet_prior_position_count, wallet_prior_win_rate, wallet_prior_wins, wallet_prior_losses,
       wallet_pool_revisit_count, wallet_pool_revisit_pnl_usd, wallet_pool_revisit_wr, wallet_pool_revisit_fees_usd,
       is_first_in_pool, position_in_pool_count,
+      price_ratio_at_close, impermanent_loss_pct, impermanent_loss_usd,
       wallet_discovery_source, wallet_discovered_at, wallet_position_index,
       created_at
-    ) VALUES (
-      ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
-      ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+) VALUES (
+      ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+            ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
     )
   `).run(
     rec.position_id,
@@ -82,6 +84,9 @@ export function insertTrainingRecord(rec) {
     rec.token_x_mcap ?? null,
     rec.token_x_liquidity ?? null,
     rec.token_x_created_at ?? null,
+    rec.token_num_holders ?? null,
+    rec.token_holder_concentration ?? null,
+    rec.token_dev_hold_rate ?? null,
     rec.token_y_symbol ?? null,
     rec.token_y_is_sol ?? null,
     rec.token_y_total_supply ?? null,
@@ -126,6 +131,9 @@ export function insertTrainingRecord(rec) {
     rec.wallet_pool_revisit_fees_usd ?? null,
     rec.is_first_in_pool ?? null,
     rec.position_in_pool_count ?? null,
+    rec.price_ratio_at_close ?? null,
+    rec.impermanent_loss_pct ?? null,
+    rec.impermanent_loss_usd ?? null,
     rec.wallet_discovery_source ?? null,
     rec.wallet_discovered_at ?? null,
     rec.wallet_position_index ?? null,

@@ -18,6 +18,7 @@ const COLUMNS = [
   'token_x_organic_score', 'token_x_is_verified', 'token_x_freeze_disabled',
   'token_x_total_supply', 'token_x_circ_supply',
   'token_x_mcap', 'token_x_liquidity', 'token_x_created_at',
+  'token_num_holders', 'token_holder_concentration', 'token_dev_hold_rate',
   'token_y_symbol', 'token_y_is_sol', 'token_y_total_supply', 'token_y_circ_supply',
   'token_volatility_24h', 'token_price_change_24h', 'volume_vs_7d_avg',
   'token_num_buys_5m', 'token_num_sells_5m', 'token_buy_sell_ratio_5m',
@@ -34,6 +35,7 @@ const COLUMNS = [
   'wallet_prior_position_count', 'wallet_prior_win_rate', 'wallet_prior_wins', 'wallet_prior_losses',
   'wallet_pool_revisit_count', 'wallet_pool_revisit_pnl_usd', 'wallet_pool_revisit_wr', 'wallet_pool_revisit_fees_usd',
   'is_first_in_pool', 'position_in_pool_count',
+  'price_ratio_at_close', 'impermanent_loss_pct', 'impermanent_loss_usd',
   'wallet_discovery_source', 'wallet_discovered_at', 'wallet_position_index',
   'exported_at', 'created_at',
 ];

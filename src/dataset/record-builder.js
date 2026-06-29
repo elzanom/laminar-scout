@@ -6,6 +6,7 @@ import { fetchMeteoraPoolMeta } from '../screener/metrics-fetcher.js';
 import { onTxEvent, offTxEvent, TX_EVENT_TYPES } from '../collector/event-bus.js';
 import { log } from '../utils/logger.js';
 import { recordSuccess, recordError, incrCounter } from '../utils/health.js';
+import { computeDlmmIl } from './impermanent-loss.js';
 
 function _dayOfWeek(ts) {
   if (!ts) return null;
@@ -31,6 +32,19 @@ function _safeNumber(n) {
   if (typeof n === 'number') return Number.isFinite(n) ? n : null;
   const v = Number(n);
   return Number.isFinite(v) ? v : null;
+}
+
+function _estimateEntryPrice({ binStep, binCenter, activeBinId, referencePrice, referenceBinId }) {
+  if (!Number.isFinite(referencePrice) || referencePrice <= 0) return null;
+  if (!Number.isFinite(binStep) || binStep <= 0) return null;
+  if (!Number.isFinite(binCenter)) return null;
+  const refBin = Number.isFinite(referenceBinId) ? referenceBinId : activeBinId;
+  if (!Number.isFinite(refBin)) return referencePrice;
+  const deltaBins = binCenter - refBin;
+  if (deltaBins === 0) return referencePrice;
+  const factor = Math.pow(1 + binStep / 10_000, deltaBins);
+  if (!Number.isFinite(factor) || factor <= 0) return null;
+  return referencePrice * factor;
 }
 
 export async function buildTrainingRecordFromPosition(position) {
@@ -142,6 +156,29 @@ export async function buildTrainingRecordFromPosition(position) {
     fee_per_tvl_24h: _safeNumber(position.fee_per_tvl_24h),
     hour_of_day: _hourOfDay(position.entry_timestamp),
     day_of_week: _dayOfWeek(position.entry_timestamp),
+
+    ...(function _ilFields() {
+      const entryPrice = _estimateEntryPrice({
+        binStep: binStepFromMeta,
+        binCenter,
+        activeBinId: position.pool_active_bin_id,
+        referencePrice: meta?.current_price,
+        referenceBinId: meta?.active_id,
+      });
+      const il = computeDlmmIl({
+        entryPrice,
+        exitPrice: meta?.current_price,
+        binLower: lowerBin,
+        binUpper: upperBin,
+        capitalUsd: _safeNumber(position.capital_usd),
+        currentPrice: meta?.current_price,
+      });
+      return {
+        price_ratio_at_close: _safeNumber(il.price_ratio_at_close),
+        impermanent_loss_pct: _safeNumber(il.impermanent_loss_pct),
+        impermanent_loss_usd: _safeNumber(il.impermanent_loss_usd),
+      };
+    })(),
 
     wallet_score_at_entry: _safeNumber(wallet?.score),
     wallet_wr_at_entry: _safeNumber(wallet?.win_rate),

@@ -182,6 +182,13 @@ function buildConfig() {
       persistChatId: bool(fileCfg.telegramPersistChatId, true),
       enabled: bool(process.env.TELEGRAM_ENABLED, fileCfg.telegramEnabled !== false),
     },
+
+    llm: {
+      apiKey: process.env.OPENROUTER_API_KEY || process.env.LLM_API_KEY || fileCfg.llmApiKey || '',
+      model: process.env.LLM_MODEL || fileCfg.llmModel || 'openrouter/auto',
+      baseUrl: process.env.LLM_BASE_URL || fileCfg.llmBaseUrl || 'https://openrouter.ai/api/v1',
+      siteName: process.env.LLM_SITE_NAME || 'laminar-scout',
+    },
   };
 
   if (cfg.runtime.dryRun === false) {
