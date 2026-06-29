@@ -207,6 +207,10 @@ function buildConfig() {
       badWrThreshold: num(fileCfg.learningBadWrThreshold, 0.40),
       cooldownHours: num(fileCfg.learningCooldownHours, 24),
       notifyTelegram: bool(fileCfg.learningNotifyTelegram, true),
+      exportDir: process.env.SCOUT_LEARNING_EXPORT_DIR || fileCfg.scoutLearningExportDir || './learning-exports',
+      autoExport: process.env.LEARNING_AUTO_EXPORT !== undefined
+        ? (process.env.LEARNING_AUTO_EXPORT === 'true' || process.env.LEARNING_AUTO_EXPORT === '1')
+        : bool(fileCfg.learningAutoExport, true),
     },
   };
 

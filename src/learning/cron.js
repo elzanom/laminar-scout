@@ -12,6 +12,12 @@ import {
   runAutoCooldown,
   getActiveCooldowns,
 } from './cooldown.js';
+import {
+  exportLessons,
+  exportPoolCooldowns,
+  exportPerformanceSnapshot,
+  exportAll,
+} from './exporter.js';
 
 const DEFAULT_BATCH_SIZE = 100;
 const DEFAULT_LOOKBACK_HOURS = 168;
@@ -94,6 +100,18 @@ export async function runLearningCycle(opts = {}) {
       lessons_generated: lessonsGenerated,
       cooldowns_applied: cooldownsApplied,
     });
+
+    if (!dryRun) {
+      try {
+        const exportResult = exportAll({ batchSize, sinceDays: Math.ceil(lookbackHours / 24), outputDir: null });
+        log('info', 'learning: export complete', {
+          manifest: exportResult.manifest,
+          counts: exportResult.counts,
+        });
+      } catch (exportErr) {
+        log('warn', 'learning: export failed (non-fatal)', { error: exportErr.message });
+      }
+    }
 
     return {
       ok: true,

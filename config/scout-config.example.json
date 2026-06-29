@@ -86,6 +86,8 @@
   "learningBadWrThreshold": 0.40,
   "learningCooldownHours": 24,
   "learningNotifyTelegram": true,
+  "scoutLearningExportDir": "./learning-exports",
+  "learningAutoExport": true,
 
   "// Health & observability (improvement #7)": "",
   "healthHeartbeatMinutes": 60,
