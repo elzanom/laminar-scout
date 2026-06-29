@@ -321,6 +321,32 @@ export function createApp() {
     res.json({ ok: true, llm_enabled: isLlmEnabled(), ...r });
   });
 
+  app.get('/api/lessons', async (req, res) => {
+    const { category, limit, run_now } = req.query;
+    if (run_now === '1' || run_now === 'true') {
+      const mod = await import('../learning/cron.js');
+      const r = await mod.runLearningCycle();
+      return res.json({ ok: r.ok !== false, triggered: true, result: r });
+    }
+    const mod = await import('../learning/lessons.js');
+    const lessons = mod.listLessons({
+      category: category || null,
+      limit: Math.min(Number(limit) || 50, 200),
+    });
+    const summary = mod.getLessonsSummary();
+    res.json({ ok: true, data: { lessons, summary } });
+  });
+
+  app.get('/api/lessons/cooldowns', async (_req, res) => {
+    const mod = await import('../learning/cooldown.js');
+    res.json({ ok: true, data: mod.getActiveCooldowns() });
+  });
+
+  app.get('/api/learning/status', async (_req, res) => {
+    const mod = await import('../learning/cron.js');
+    res.json({ ok: true, data: mod.getLearningStatus() });
+  });
+
   app.use(express.static(PUBLIC_DIR, { index: 'index.html', extensions: ['html'] }));
 
   app.get('/healthz', (_req, res) => res.json({ ok: true }));

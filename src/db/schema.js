@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 import { getConfig } from '../config/config.js';
 import { log } from '../utils/logger.js';
 
-const SCHEMA_VERSION = 12;
+const SCHEMA_VERSION = 13;
 
 const MIGRATIONS = [
   {
@@ -198,6 +198,58 @@ const MIGRATIONS = [
       _addCol('positions', 'impermanent_loss_usd', 'REAL');
       _addCol('positions', 'impermanent_loss_pct', 'REAL');
       _addCol('positions', 'price_ratio_at_close', 'REAL');
+    },
+  },
+  {
+    version: 13,
+    description: 'Add learning loop tables: lessons (auto-derived patterns) + pool_cooldown (skip bad pools)',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS lessons (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          rule TEXT NOT NULL,
+          tags TEXT,
+          outcome TEXT NOT NULL,
+          confidence REAL NOT NULL DEFAULT 0.35,
+          source TEXT NOT NULL DEFAULT 'auto',
+          context TEXT,
+          category TEXT,
+          pool_address TEXT,
+          wallet_address TEXT,
+          sample_count INTEGER NOT NULL DEFAULT 1,
+          applied_count INTEGER NOT NULL DEFAULT 0,
+          created_at INTEGER NOT NULL
+        )
+      `);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_lessons_created ON lessons(created_at DESC)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_lessons_category ON lessons(category)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_lessons_pool ON lessons(pool_address)`);
+      db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_lessens_dedup ON lessons(rule)`);
+
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS pool_cooldown (
+          pool_address TEXT PRIMARY KEY,
+          reason TEXT NOT NULL,
+          sample_count INTEGER NOT NULL,
+          win_rate REAL NOT NULL,
+          cooldown_until INTEGER NOT NULL,
+          auto_evolved_at INTEGER NOT NULL
+        )
+      `);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_pool_cooldown_until ON pool_cooldown(cooldown_until)`);
+
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS learning_runs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          positions_analyzed INTEGER NOT NULL,
+          lessons_generated INTEGER NOT NULL,
+          cooldowns_applied INTEGER NOT NULL,
+          thresholds_adjusted INTEGER NOT NULL DEFAULT 0,
+          started_at INTEGER NOT NULL,
+          finished_at INTEGER,
+          error TEXT
+        )
+      `);
     },
   },
 ];

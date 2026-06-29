@@ -149,6 +149,13 @@ async function cronSignalMaintenance() {
   return { expired };
 }
 
+async function cronLearningCycle() {
+  const cfg = getConfig();
+  if (!cfg.learning?.enabled) return { skipped: 'learning_disabled' };
+  const mod = await import('./learning/cron.js');
+  return mod.runLearningCycle();
+}
+
 async function cronDatasetExport() {
   const cfg = getConfig();
   if (!cfg.dataset?.autoExportOnClose) return null;
@@ -165,6 +172,11 @@ function buildCronTable() {
     { name: 'snapshots', expr: `*/${Math.max(5, cfg.collection.snapshotIntervalMinutes || 15)} * * * *`, task: cronMarketSnapshots },
     { name: 'signal-maintenance', expr: '*/5 * * * *', task: cronSignalMaintenance },
     { name: 'dataset-export', expr: '0 */1 * * *', task: cronDatasetExport },
+    {
+      name: 'learning',
+      expr: `*/${Math.max(5, cfg.learning?.intervalMinutes || 60)} * * * *`,
+      task: cronLearningCycle,
+    },
   ];
 }
 

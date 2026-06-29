@@ -195,6 +195,19 @@ function buildConfig() {
       baseUrl: process.env.LLM_BASE_URL || fileCfg.llmBaseUrl || 'https://openrouter.ai/api/v1',
       siteName: process.env.LLM_SITE_NAME || 'laminar-scout',
     },
+
+    learning: {
+      enabled: process.env.LEARNING_ENABLED !== undefined
+        ? (process.env.LEARNING_ENABLED === 'true' || process.env.LEARNING_ENABLED === '1')
+        : bool(fileCfg.learningEnabled, true),
+      intervalMinutes: num(process.env.LEARNING_INTERVAL_MINUTES, fileCfg.learningIntervalMinutes, 60),
+      batchSize: num(fileCfg.learningBatchSize, 200),
+      lookbackHours: num(fileCfg.learningLookbackHours, 168),
+      minSamples: num(fileCfg.learningMinSamples, 5),
+      badWrThreshold: num(fileCfg.learningBadWrThreshold, 0.40),
+      cooldownHours: num(fileCfg.learningCooldownHours, 24),
+      notifyTelegram: bool(fileCfg.learningNotifyTelegram, true),
+    },
   };
 
   if (cfg.runtime.dryRun === false) {
